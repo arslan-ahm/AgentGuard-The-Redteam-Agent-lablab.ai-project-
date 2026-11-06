@@ -627,3 +627,44 @@ async def test_real_url_validator_pins_and_blocks(tmp_path: Path) -> None:
     assert result.status.value == "blocked"
     assert commands2.calls == []  # never launched
     assert result.policy_events[0]["reason"] == "cloud metadata address"
+
+
+# --- evidence redaction ----------------------------------------------------------------
+
+
+async def test_evidence_and_result_redacted_before_use(tmp_path: Path) -> None:
+    leaky_url = "https://demo.example.com/reset?token=SECRET123456"
+    finding = {**FINDING, "url": leaky_url, "reproduction": [f"Open {leaky_url}"]}
+
+    def container(in_dir: Path, out_dir: Path) -> int:
+        (out_dir / "network_summary.json").write_text(
+            json.dumps([{"url": leaky_url, "headers": {"Authorization": "Bearer abc123def"}}])
+        )
+        (out_dir / "console.json").write_text(
+            json.dumps([{"type": "log", "text": "login ok password=hunter2"}])
+        )
+        events = [{"action": "navigate", "target": leaky_url, "decision": "allowed"}]
+        return _write(out_dir, result_json("failed", findings=[finding], policy_events=events))
+
+    runner, _ = make_runner(tmp_path, FakeCommands(container))
+    result = await runner.run(make_task())
+    _, out_dir = runner.task_dirs(make_task())
+    on_disk = (out_dir / "network_summary.json").read_text() + (
+        out_dir / "console.json"
+    ).read_text()
+    for secret in ("SECRET123456", "abc123def", "hunter2"):
+        assert secret not in on_disk
+        assert secret not in result.model_dump_json()
+    assert result.findings[0].url == "https://demo.example.com/reset?token=[REDACTED]"
+    assert result.status.value == "failed"  # redaction never changes the verdict
+
+
+async def test_unparseable_evidence_is_blanked_not_kept(tmp_path: Path) -> None:
+    def container(in_dir: Path, out_dir: Path) -> int:
+        (out_dir / "console.json").write_text("not json, Cookie: sid=TOPSECRET")
+        return _write(out_dir, result_json())
+
+    runner, _ = make_runner(tmp_path, FakeCommands(container))
+    await runner.run(make_task())
+    _, out_dir = runner.task_dirs(make_task())
+    assert json.loads((out_dir / "console.json").read_text()) == []
