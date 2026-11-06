@@ -150,9 +150,10 @@ def test_load_check_rejects_non_whitelisted(check_id: str) -> None:
         runner.load_check(check_id)
 
 
-def test_load_check_whitelisted_but_missing_module() -> None:
+def test_load_check_whitelisted_but_missing_module(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(runner, "ALLOWED_CHECK_IDS", frozenset({"security.not_written_yet"}))
     with pytest.raises(ImportError):
-        runner.load_check("security.login_rate_probe")
+        runner.load_check("security.not_written_yet")
 
 
 @pytest.mark.parametrize(
