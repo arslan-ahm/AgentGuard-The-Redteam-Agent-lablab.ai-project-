@@ -48,7 +48,7 @@ Audit events (`actor`, `action`, `decision`): `sandbox launched/allowed`, `polic
 
 ## Deployment note
 
-The worker container talks to Docker to start sandboxes. Bind-mount sources are resolved **on the host**, so `work_root` must be the same absolute path on the host and inside the worker (for example `/var/lib/agentguard/work:/var/lib/agentguard/work`). The sandbox containers themselves never get Docker access.
+The worker container talks to Docker to start sandboxes, through the `docker-proxy` service (`DOCKER_HOST=tcp://docker-proxy:2375`, container API only, no image pulls, no exec). The worker image is `deploy/worker.Dockerfile`: the backend image plus the docker CLI. Bind-mount sources are resolved **on the host**, so `work_root` must be the same absolute path on the host and inside the worker. Compose mounts `AGENTGUARD_WORK_ROOT` (default `/var/lib/agentguard/work`) that way. The sandbox containers themselves never get Docker access. Full setup: `docs/deploy-vultr.md`.
 
 ## Tests
 

@@ -1,0 +1,45 @@
+# AgentGuard configuration (brief 5.12). Template only: no real values, ever.
+#   cp deploy/dotenv.example .env && chmod 600 .env      # then fill in
+# Generate secrets with:  openssl rand -hex 32
+
+# --- Public address ---------------------------------------------------------------------
+# Local: ":80" (plain HTTP). Vultr VM: the public domain, e.g. "agentguard.example.com";
+# Caddy then gets and renews the HTTPS certificate itself (DNS A record must point at the VM).
+SITE_ADDRESS=:80
+PUBLIC_BASE_URL=http://localhost
+# Comma-separated browser origins allowed by the API (CORS). Same as PUBLIC_BASE_URL in prod.
+ALLOWED_ORIGINS=http://localhost
+
+# --- API ----------------------------------------------------------------------------------
+# Signs auth tokens. 32+ random bytes; rotating it logs everyone out.
+SECRET_KEY=
+
+# --- Database (Postgres container) ----------------------------------------------------------
+# DATABASE_URL is built from these in docker-compose.yml; set DATABASE_URL yourself only
+# when running the backend outside compose.
+POSTGRES_USER=agentguard
+POSTGRES_PASSWORD=
+POSTGRES_DB=agentguard
+# DATABASE_URL=postgresql+psycopg://agentguard:<password>@localhost:5432/agentguard
+# REDIS_URL=redis://localhost:6379/0
+
+# --- Vultr Serverless Inference (planner + summaries) -----------------------------------------
+# Leave the key empty to use the deterministic fallback plans (the demo works without the LLM).
+VULTR_INFERENCE_BASE_URL=https://api.vultrinference.com/v1
+VULTR_INFERENCE_API_KEY=
+VULTR_INFERENCE_MODEL=
+
+# --- Sandbox (brief 6.4) ------------------------------------------------------------------------
+# Image built by:  docker compose --profile build-only build sandbox
+SANDBOX_IMAGE=agentguard-sandbox:local
+SANDBOX_CPU_LIMIT=1.0
+SANDBOX_MEM_LIMIT=1g
+# Hard wall-clock limit per sandbox container, seconds.
+SANDBOX_TIMEOUT_S=120
+# Per-task in/ and out/ folders. MUST be an absolute path that is identical on the host
+# and inside the worker container (Docker resolves bind-mount sources on the host).
+AGENTGUARD_WORK_ROOT=/var/lib/agentguard/work
+
+# --- Optional -------------------------------------------------------------------------------------
+# Fine-grained token, "Issues: write" on the one demo repo only. Used only after approval.
+GITHUB_TOKEN=
