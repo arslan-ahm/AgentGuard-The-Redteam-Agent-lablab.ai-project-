@@ -1,0 +1,142 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" font-family="Inter, 'Segoe UI', Arial, sans-serif">
+  <title>AgentGuard architecture</title>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#9fb3c8"/>
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#3ddc97"/>
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#ff5a5f"/>
+    </marker>
+    <style>
+      .box { fill: #142231; stroke: #2e4a66; stroke-width: 2; }
+      .svc { fill: #e8f1fa; font-size: 21px; font-weight: 700; }
+      .sub { fill: #9fb3c8; font-size: 15px; }
+      .lbl { fill: #9fb3c8; font-size: 14px; font-weight: 600; }
+      .line { stroke: #9fb3c8; stroke-width: 2; fill: none; }
+    </style>
+  </defs>
+
+  <rect width="1600" height="900" fill="#0b1520"/>
+  <text x="40" y="62" fill="#e8f1fa" font-size="32" font-weight="800">AgentGuard architecture</text>
+  <text x="40" y="92" class="sub" font-size="17">Real browser tests in disposable sandboxes · containment first · built on Vultr</text>
+
+  <!-- Vultr VM boundary -->
+  <rect x="250" y="110" width="930" height="745" rx="18" fill="#0f1c2a" stroke="#4a8fe7" stroke-width="2.5"/>
+  <rect x="270" y="98" width="450" height="26" rx="6" fill="#0b1520"/>
+  <text x="280" y="118" fill="#4a8fe7" font-size="18" font-weight="800">VULTR CLOUD COMPUTE VM · Docker Compose</text>
+
+  <!-- User -->
+  <rect class="box" x="40" y="380" width="170" height="90" rx="12"/>
+  <text class="svc" x="125" y="418" text-anchor="middle">User</text>
+  <text class="sub" x="125" y="444" text-anchor="middle">browser</text>
+
+  <!-- web -->
+  <rect class="box" x="280" y="150" width="230" height="110" rx="12"/>
+  <text class="svc" x="300" y="185">web · Caddy</text>
+  <text class="sub" x="300" y="212">HTTPS (auto certificate)</text>
+  <text class="sub" x="300" y="236">SPA + reverse proxy</text>
+
+  <!-- backend -->
+  <rect class="box" x="560" y="150" width="290" height="180" rx="12" stroke="#4a8fe7"/>
+  <text class="svc" x="580" y="185">backend · FastAPI</text>
+  <text class="sub" x="580" y="213">URL policy: DNS + private-IP block</text>
+  <text class="sub" x="580" y="237">rate limits · secret redaction</text>
+  <text class="sub" x="580" y="261">hash-chained audit log</text>
+  <text class="sub" x="580" y="285">planner · verifier · scoring</text>
+  <text class="sub" x="580" y="309">human approval gate</text>
+
+  <!-- postgres / redis -->
+  <rect class="box" x="900" y="150" width="250" height="80" rx="12"/>
+  <text class="svc" x="920" y="183">postgres</text>
+  <text class="sub" x="920" y="208">scans · findings · audit</text>
+  <rect class="box" x="900" y="250" width="250" height="80" rx="12"/>
+  <text class="svc" x="920" y="283">redis</text>
+  <text class="sub" x="920" y="308">job queue</text>
+
+  <!-- worker / proxy -->
+  <rect class="box" x="560" y="380" width="290" height="100" rx="12"/>
+  <text class="svc" x="580" y="415">worker · RQ</text>
+  <text class="sub" x="580" y="441">sandbox launcher: limits, DNS pin,</text>
+  <text class="sub" x="580" y="463">result validation, always destroy</text>
+  <rect class="box" x="900" y="380" width="250" height="100" rx="12"/>
+  <text class="svc" x="920" y="415">docker-proxy</text>
+  <text class="sub" x="920" y="441">container API only</text>
+  <text class="sub" x="920" y="463">internal network</text>
+
+  <!-- sandbox zone -->
+  <rect x="280" y="540" width="870" height="290" rx="14" fill="#1a1216" stroke="#ff5a5f" stroke-width="2" stroke-dasharray="9 7"/>
+  <text x="300" y="780" fill="#ff8a8e" font-size="16" font-weight="800">agentguard-sandbox network · egress firewall (iptables): public internet only</text>
+
+  <g>
+    <rect class="box" x="300" y="595" width="250" height="150" rx="12" stroke="#3ddc97"/>
+    <text class="svc" x="318" y="628">sandbox · Playwright</text>
+    <text class="sub" x="318" y="656">1 task · non-root</text>
+    <text class="sub" x="318" y="680">read-only FS · cap-drop ALL</text>
+    <text class="sub" x="318" y="704">CPU / mem / pids / time limits</text>
+    <text class="sub" x="318" y="728">in-browser network guard</text>
+  </g>
+  <g>
+    <rect class="box" x="580" y="595" width="250" height="150" rx="12" stroke="#3ddc97"/>
+    <text class="svc" x="598" y="628">sandbox · Playwright</text>
+    <text class="sub" x="598" y="656">next task, fresh container</text>
+    <text class="sub" x="598" y="680">only /in (ro) + /out mounted</text>
+    <text class="sub" x="598" y="704">no Docker socket</text>
+    <text class="sub" x="598" y="728">no secrets inside</text>
+  </g>
+  <g opacity="0.45">
+    <rect class="box" x="860" y="595" width="270" height="150" rx="12" stroke-dasharray="6 6"/>
+    <text class="svc" x="878" y="628">sandbox (destroyed)</text>
+    <text class="sub" x="878" y="656">removed on success, failure,</text>
+    <text class="sub" x="878" y="680">timeout and policy violation</text>
+  </g>
+  <text x="300" y="810" class="sub" font-size="16">One container per task, created by the worker and destroyed after it. Exit code 3 = policy violation → task blocked.</text>
+
+  <!-- outside the VM -->
+  <rect class="box" x="1230" y="150" width="330" height="120" rx="12" stroke="#4a8fe7"/>
+  <text x="1250" y="183" fill="#4a8fe7" font-size="14" font-weight="800">VULTR</text>
+  <text class="svc" x="1250" y="210">Serverless Inference</text>
+  <text class="sub" x="1250" y="236">test planning + summaries</text>
+  <text class="sub" x="1250" y="258">redacted page text only</text>
+
+  <rect class="box" x="1230" y="380" width="330" height="100" rx="12"/>
+  <text class="svc" x="1250" y="415">GitHub issue / report</text>
+  <text class="sub" x="1250" y="441">sent only after a human</text>
+  <text class="sub" x="1250" y="463">approves it</text>
+
+  <rect class="box" x="1230" y="560" width="330" height="95" rx="12" stroke="#3ddc97"/>
+  <text class="svc" x="1250" y="594">Target website</text>
+  <text class="sub" x="1250" y="620">authorized by the user</text>
+  <text class="sub" x="1250" y="642">safe, non-destructive checks</text>
+
+  <rect x="1230" y="690" width="330" height="140" rx="12" fill="#2a1316" stroke="#ff5a5f" stroke-width="2.5"/>
+  <text x="1250" y="724" fill="#ff5a5f" font-size="20" font-weight="800">✕ BLOCKED BY POLICY</text>
+  <text class="sub" x="1250" y="752" fill="#ffc2c4">169.254.169.254 (cloud metadata)</text>
+  <text class="sub" x="1250" y="776" fill="#ffc2c4">localhost · 10/8 · 172.16/12</text>
+  <text class="sub" x="1250" y="800" fill="#ffc2c4">192.168/16 · VM host · other origins</text>
+  <text class="sub" x="1250" y="822" fill="#ffc2c4">logged + sandbox destroyed</text>
+
+  <!-- connections -->
+  <polyline class="line" points="210,425 245,425 245,205 276,205" marker-end="url(#arrow)"/>
+  <text class="lbl" x="125" y="368" text-anchor="middle">HTTPS 443</text>
+  <line class="line" x1="510" y1="205" x2="556" y2="205" marker-end="url(#arrow)"/>
+  <text class="lbl" x="515" y="196">/api</text>
+  <line class="line" x1="850" y1="190" x2="896" y2="190" marker-end="url(#arrow)"/>
+  <line class="line" x1="850" y1="290" x2="896" y2="290" marker-end="url(#arrow)"/>
+  <polyline class="line" points="1025,330 1025,355 705,355 705,376" marker-end="url(#arrow)"/>
+  <text class="lbl" x="725" y="372">jobs</text>
+  <line class="line" x1="850" y1="430" x2="896" y2="430" marker-end="url(#arrow)"/>
+  <polyline class="line" points="1025,480 1025,515 705,515 705,591" marker-end="url(#arrow)"/>
+  <text class="lbl" x="725" y="532">docker run (fresh per task)</text>
+  <polyline class="line" points="705,150 705,132 1395,132 1395,146" marker-end="url(#arrow)"/>
+  <text class="lbl" x="1000" y="127">plan / summarize</text>
+  <polyline class="line" points="850,240 1190,240 1190,430 1226,430" marker-end="url(#arrow)"/>
+  <text class="lbl" x="1198" y="320">on approval</text>
+
+  <line x1="1150" y1="607" x2="1226" y2="607" stroke="#3ddc97" stroke-width="2.5" marker-end="url(#arrow-green)"/>
+  <line x1="1150" y1="760" x2="1226" y2="760" stroke="#ff5a5f" stroke-width="2.5" stroke-dasharray="6 5" marker-end="url(#arrow-red)"/>
+
+  <text x="40" y="885" class="sub" font-size="15">Only web publishes ports (80/443). postgres, redis and docker-proxy are reachable only on internal Compose networks. Credentials never reach the LLM.</text>
+</svg>
