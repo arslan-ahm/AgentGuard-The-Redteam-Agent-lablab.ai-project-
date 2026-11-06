@@ -143,20 +143,20 @@ bun run dev                               # starts the website
 <summary>🐳 <b>Run everything with Docker instead</b> (click to open)</summary>
 
 ```bash
-cp .env.example .env            # make your settings file
+cp deploy/dotenv.example .env                       # make your settings file
 # open .env and fill in SECRET_KEY and POSTGRES_PASSWORD
-docker compose build sandbox    # builds the safety-box image
-docker compose up --build       # starts everything
+docker compose --profile build-only build sandbox   # builds the safety-box image
+docker compose up --build                           # starts everything
 ```
 👉 Open **http://localhost**
 
-This starts 5 parts together: website, backend, background worker, database (PostgreSQL) and queue (Redis).
+This starts 6 parts together: website, backend, background worker, database (PostgreSQL), queue (Redis) and the locked-down Docker proxy the worker uses to start safety boxes. Putting it on a real server (Vultr): [docs/deploy-vultr.md](docs/deploy-vultr.md).
 </details>
 
 <details>
 <summary>⚙️ <b>Settings (<code>.env</code> file)</b> (click to open)</summary>
 
-Copy `.env.example` to `.env` and fill it in. **Never commit `.env` to GitHub**; it holds secrets.
+Copy `deploy/dotenv.example` to `.env` and fill it in. **Never commit `.env` to GitHub**; it holds secrets.
 
 | Setting | What it means | Needed? |
 |---|---|---|

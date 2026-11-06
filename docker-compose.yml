@@ -1,10 +1,11 @@
 # AgentGuard stack (brief 4 and 6.10). Owner: Arslan (Vultr deployment), reviewer: Sohaib.
 #
-#   cp .env.example .env            # then fill in values
-#   docker compose up --build       # web on http://localhost (SITE_ADDRESS=:80)
-#   docker compose build sandbox    # builds the sandbox image used per scan task
+#   cp deploy/dotenv.example .env                      # then fill in values
+#   docker compose --profile build-only build sandbox  # image used per scan task
+#   docker compose up -d --build                       # web on http://localhost (SITE_ADDRESS=:80)
 #
 # The same file runs on the Vultr VM with SITE_ADDRESS set to the public domain (HTTPS).
+# Full runbook: docs/deploy-vultr.md. Only web publishes ports (80/443).
 
 name: agentguard
 
@@ -30,31 +31,90 @@ services:
       SITE_ADDRESS: ${SITE_ADDRESS:-:80}
     ports: ["80:80", "443:443"]
     volumes: [caddy-data:/data, caddy-config:/config]
+    healthcheck:
+      # Caddy's local admin API: answers as soon as the proxy (and its TLS setup) is running.
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:2019/config/"]
+      interval: 15s
+      timeout: 3s
+      retries: 5
     depends_on:
       backend: { condition: service_healthy }
     restart: unless-stopped
 
   backend:
     build: { context: ., dockerfile: backend/Dockerfile }
-    environment: *backend-env
+    environment:
+      <<: *backend-env
+      AGENTGUARD_WORK_ROOT: ${AGENTGUARD_WORK_ROOT:-/var/lib/agentguard/work}
     expose: ["8000"]
+    volumes:
+      # Read-only: the API serves evidence (GET /scans/{id}/evidence/...) but never writes it.
+      - ${AGENTGUARD_WORK_ROOT:-/var/lib/agentguard/work}:${AGENTGUARD_WORK_ROOT:-/var/lib/agentguard/work}:ro
     depends_on:
       postgres: { condition: service_healthy }
       redis: { condition: service_healthy }
     restart: unless-stopped
 
   worker:
-    build: { context: ., dockerfile: backend/Dockerfile }
-    command: ["rq", "worker", "--url", "redis://redis:6379/0", "agentguard"]
-    environment: *backend-env
-    healthcheck:
-      disable: true  # the image's /healthz check is for the API; the worker serves no HTTP
-    # Launching sandboxes needs access to a Docker engine. How the worker gets it (socket
-    # proxy limited to container create/start/kill, rootless Docker, etc.) is Arslan's
-    # Sandbox executor decision (brief 6.4). The sandbox containers themselves NEVER get it.
+    # backend image + docker CLI (deploy/worker.Dockerfile)
+    build:
+      context: .
+      dockerfile: deploy/worker.Dockerfile
+      additional_contexts:
+        backend-image: service:backend
+    environment:
+      <<: *backend-env
+      # Docker only through the filtered proxy below, never the raw socket.
+      DOCKER_HOST: tcp://docker-proxy:2375
+      AGENTGUARD_WORK_ROOT: ${AGENTGUARD_WORK_ROOT:-/var/lib/agentguard/work}
+    volumes:
+      # Same absolute path on both sides: Docker resolves the sandbox's bind mounts on the host.
+      - ${AGENTGUARD_WORK_ROOT:-/var/lib/agentguard/work}:${AGENTGUARD_WORK_ROOT:-/var/lib/agentguard/work}
+    networks: [default, docker-api]
     depends_on:
       postgres: { condition: service_healthy }
       redis: { condition: service_healthy }
+      docker-proxy: { condition: service_started }
+    restart: unless-stopped
+
+  # The worker's only way to reach Docker. Allows the container API (create, start, wait,
+  # attach, kill, remove) plus ping/version; refuses images (no pulls), exec, build,
+  # networks, volumes, swarm, system and events. Reachable only on the internal docker-api
+  # network: not published, and sandboxes (on agentguard-sandbox) can't reach it.
+  # Residual risk, documented in docs/deploy-vultr.md: whoever controls the worker can
+  # still create containers, so the worker must only ever run our own code.
+  docker-proxy:
+    image: tecnativa/docker-socket-proxy:v0.4.1
+    environment:
+      CONTAINERS: 1
+      POST: 1
+      ALLOW_START: 1
+      ALLOW_STOP: 1
+      ALLOW_RESTARTS: 0
+      PING: 1
+      VERSION: 1
+      EVENTS: 0
+      IMAGES: 0
+      EXEC: 0
+      BUILD: 0
+      NETWORKS: 0
+      VOLUMES: 0
+      SERVICES: 0
+      TASKS: 0
+      SWARM: 0
+      NODES: 0
+      SECRETS: 0
+      CONFIGS: 0
+      PLUGINS: 0
+      SYSTEM: 0
+      INFO: 0
+      AUTH: 0
+      DISTRIBUTION: 0
+    volumes: ["/var/run/docker.sock:/var/run/docker.sock:ro"]
+    networks: [docker-api]
+    read_only: true
+    tmpfs: ["/run", "/tmp"]
+    security_opt: ["no-new-privileges:true"]
     restart: unless-stopped
 
   postgres:
@@ -88,6 +148,12 @@ services:
     build: { context: ., dockerfile: sandbox-worker/Dockerfile }
     image: ${SANDBOX_IMAGE:-agentguard-sandbox:local}
     profiles: ["build-only"]
+
+networks:
+  default:
+  # worker <-> docker-proxy only. internal: no route to the internet or the host.
+  docker-api:
+    internal: true
 
 volumes:
   postgres-data:
