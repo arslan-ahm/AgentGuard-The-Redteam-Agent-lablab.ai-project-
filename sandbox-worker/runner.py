@@ -16,6 +16,7 @@ import json
 import os
 import sys
 import time
+from collections.abc import Callable
 from pathlib import Path
 from types import ModuleType
 from typing import Any
@@ -31,6 +32,7 @@ from agentguard_contracts import (
 from pydantic import ValidationError
 
 from checks.context import CheckContext, PolicyViolation, SameOriginPolicy
+from checks.netguard import SUBRESOURCE_BLOCKED, NetworkGuard, guard_websocket
 
 
 def load_check(check_id: str) -> ModuleType:
@@ -45,17 +47,27 @@ def load_check(check_id: str) -> ModuleType:
 
 
 async def execute(
-    task_input: SandboxTaskInput, check: ModuleType, page: Any, out_dir: Path
+    task_input: SandboxTaskInput,
+    check: ModuleType,
+    page: Any,
+    out_dir: Path,
+    policy: SameOriginPolicy | None = None,
+    seen_headers: Callable[[str], list[dict[str, str]] | None] | None = None,
 ) -> tuple[SandboxResult, int]:
-    """Run one check and build its ``result.json`` and exit code. Never raises."""
+    """Run one check and build its ``result.json`` and exit code. Never raises.
+
+    ``policy`` is shared with the page's :class:`NetworkGuard` so that requests the browser
+    makes on its own (redirects, subresources) land in the same ``policy_events``.
+    """
     task = task_input.task
-    policy = SameOriginPolicy(task_input.target_url)
+    policy = policy or SameOriginPolicy(task_input.target_url)
     ctx = CheckContext(
         target_url=task_input.target_url,
         params=task.params,
         evidence_dir=out_dir,
         policy=policy,
         page=page,
+        seen_headers=seen_headers,
     )
     started = time.monotonic()
     findings: list[FindingDraft] = []
@@ -72,7 +84,12 @@ async def execute(
 
     # A check must not be able to swallow a PolicyViolation and carry on: any blocked
     # decision makes the whole task blocked, so the sandbox self-terminates (exit 3).
-    if any(event.get("decision") == "blocked" for event in policy.events):
+    # Exception: subresources the network guard aborted never left the sandbox, so a page
+    # embedding e.g. <img src="http://localhost/x"> doesn't sink the whole task.
+    if any(
+        event.get("decision") == "blocked" and event.get("action") != SUBRESOURCE_BLOCKED
+        for event in policy.events
+    ):
         status, code = SandboxResultStatus.BLOCKED, SandboxExitCode.POLICY_VIOLATION
         findings = []
 
@@ -115,12 +132,20 @@ async def _run_in_browser(task_input: SandboxTaskInput, out_dir: Path) -> int:
         return SandboxExitCode.CHECK_ERROR
 
     console: list[dict[str, str]] = []
+    policy = SameOriginPolicy(task_input.target_url)
+    guard = NetworkGuard(policy)
     async with async_playwright() as pw:
         browser = await pw.chromium.launch()
         try:
-            page = await browser.new_page()
+            # Service workers could fetch outside page.route, so they are disabled.
+            context = await browser.new_context(service_workers="block")
+            page = await context.new_page()
+            await page.route("**/*", guard.handle)
+            await page.route_web_socket("**", lambda ws: guard_websocket(policy, ws))
             page.on("console", lambda m: console.append({"type": m.type, "text": m.text[:2000]}))
-            result, code = await execute(task_input, check, page, out_dir)
+            result, code = await execute(
+                task_input, check, page, out_dir, policy=policy, seen_headers=guard.headers_for
+            )
         finally:
             await browser.close()
     (out_dir / "console.json").write_text(json.dumps(console, indent=2))

@@ -1,0 +1,18 @@
+# Re-applies the AgentGuard sandbox egress firewall after every boot / Docker restart.
+#   sudo cp scripts/agentguard-egress.service /etc/systemd/system/
+#   sudo sed -i "s|/opt/agentguard|$(pwd)|" /etc/systemd/system/agentguard-egress.service
+#   sudo systemctl daemon-reload && sudo systemctl enable --now agentguard-egress
+[Unit]
+Description=AgentGuard sandbox egress firewall
+After=docker.service
+Requires=docker.service
+PartOf=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/bin/bash /opt/agentguard/scripts/sandbox-egress.sh apply
+ExecStop=/bin/bash /opt/agentguard/scripts/sandbox-egress.sh remove
+
+[Install]
+WantedBy=multi-user.target docker.service

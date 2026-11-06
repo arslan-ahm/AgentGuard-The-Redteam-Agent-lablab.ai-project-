@@ -12,6 +12,7 @@ Always call ``ctx.policy.assert_allowed(url)`` before any navigation or request.
 from __future__ import annotations
 
 import re
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Protocol
@@ -55,40 +56,46 @@ def _scheme_switch(url: str, target_url: str) -> bool:
 
 @dataclass
 class SameOriginPolicy:
-    """Placeholder in-sandbox guard: only the target's own scheme, host and port are allowed.
-
-    Deliberately stricter than the final policy. Owner: Arslan (Policy + audit) replaces or
-    extends it with DNS resolution and private/loopback/link-local/metadata IP blocking. The
-    real containment boundary is the container's network egress rules, not this check.
+    """Where checks may navigate: only the target's own host and port (http<->https allowed on
+    default ports). ``checks/netguard.py`` enforces the same rule on every browser request,
+    every redirect hop and every subresource, and adds private/metadata IP blocking. The
+    container's network egress rules are the outer boundary.
     """
 
     target_url: str
     events: list[dict[str, Any]] = field(default_factory=list)
 
-    def assert_allowed(self, url: str) -> None:
-        reason = ""
+    def reason_for(self, url: str) -> str:
+        """Why ``url`` may not be navigated to, or ``""`` if it may. Never raises."""
         try:
             wanted = urlsplit(url)
             if wanted.scheme not in _DEFAULT_PORTS:
-                reason = f"scheme {wanted.scheme!r} not allowed"
-            elif wanted.username or wanted.password:
-                reason = "credentials in URL"
-            elif _origin(url) != _origin(self.target_url) and not _scheme_switch(
+                return f"scheme {wanted.scheme!r} not allowed"
+            if wanted.username or wanted.password:
+                return "credentials in URL"
+            if _origin(url) != _origin(self.target_url) and not _scheme_switch(
                 url, self.target_url
             ):
-                reason = "outside the target origin"
+                return "outside the target origin"
         except ValueError as exc:  # malformed URL or port: never allowed
-            reason = f"malformed URL: {exc}"
-        decision = "blocked" if reason else "allowed"
+            return f"malformed URL: {exc}"
+        return ""
+
+    def record(self, action: str, target: str, reason: str, *, blocked: bool) -> None:
+        """Append one policy event (shape of brief 5.9 without ts/scan_id)."""
         self.events.append(
             {
                 "actor": "sandbox",
-                "action": "navigate",
-                "target": url,
-                "decision": decision,
-                "reason": reason or "same origin as target",
+                "action": action,
+                "target": target[:500],
+                "decision": "blocked" if blocked else "allowed",
+                "reason": reason[:500],
             }
         )
+
+    def assert_allowed(self, url: str) -> None:
+        reason = self.reason_for(url)
+        self.record("navigate", url, reason or "same origin as target", blocked=bool(reason))
         if reason:
             raise PolicyViolation(url, reason)
 
@@ -106,6 +113,10 @@ class CheckContext:
     policy: Policy
     page: Any = None
     requests: list[dict[str, Any]] = field(default_factory=list)
+    seen_headers: Callable[[str], list[dict[str, str]] | None] | None = None
+    """Raw response headers (incl. ``Set-Cookie``) the network guard received for a URL.
+    ``None`` outside the sandbox browser. Playwright hides ``Set-Cookie`` on guarded
+    responses, so use this when you need it and fall back to ``response.headers_array()``."""
 
     async def screenshot(self, name: str) -> str:
         """Save a full-page screenshot into ``evidence_dir/screenshots`` and return its filename.

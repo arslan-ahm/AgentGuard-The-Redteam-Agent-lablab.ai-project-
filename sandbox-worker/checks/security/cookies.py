@@ -114,7 +114,11 @@ async def run(page: Any, ctx: CheckContext) -> list[dict[str, Any]]:
     response = await navigate(page, ctx, url)
     if response is None:
         return []
-    raw = [h["value"] for h in await response.headers_array() if h["name"].lower() == "set-cookie"]
+    # Guarded responses hide Set-Cookie from headers_array(): prefer what the guard saw.
+    headers = ctx.seen_headers(response.url) if ctx.seen_headers else None
+    if headers is None:
+        headers = await response.headers_array()
+    raw = [h["value"] for h in headers if h["name"].lower() == "set-cookie"]
     cookies = [c for c in (parse_set_cookie(v) for v in raw) if c is not None]
     ctx.record_request(
         {

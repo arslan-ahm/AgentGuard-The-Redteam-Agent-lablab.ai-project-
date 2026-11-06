@@ -43,6 +43,7 @@ class FakeResponse:
         set_cookies: list[str] | None = None,
     ) -> None:
         self.status = status
+        self.url = ""
         self._headers = {k.lower(): v for k, v in (hdrs or {}).items()}
         self._body = body
         self._set_cookies = set_cookies or []
@@ -96,7 +97,9 @@ class FakePage:
     ) -> FakeResponse:
         assert timeout > 0
         self.visited.append(url)
-        return self.routes.get(url, self.default)
+        response = self.routes.get(url, self.default)
+        response.url = url  # Playwright's Response.url is the requested URL
+        return response
 
     async def screenshot(self, path: str, full_page: bool) -> None:
         await asyncio.to_thread(Path(path).write_bytes, b"png")
@@ -315,6 +318,25 @@ async def test_cookies_run_never_records_values(tmp_path: Path) -> None:
     assert ctx.requests[-1]["set_cookie"][0]["name"] == "connect.sid"
 
 
+async def test_cookies_run_reads_guard_headers(tmp_path: Path) -> None:
+    """Under the network guard Playwright hides Set-Cookie: the check uses ctx.seen_headers."""
+    page = FakePage(default=FakeResponse(200, GOOD_HEADERS))  # no Set-Cookie visible
+    ctx = make_ctx(tmp_path, page)
+    seen: list[str] = []
+
+    def seen_headers(url: str) -> list[dict[str, str]] | None:
+        seen.append(url)
+        return [{"name": "set-cookie", "value": "sessionid=X; Path=/"}]
+
+    ctx.seen_headers = seen_headers
+    found = await cookies.run(page, ctx)
+    assert titles(found) == [
+        "Cookie 'sessionid' has weak flags: Secure is missing, HttpOnly is missing, "
+        "SameSite is not set"
+    ]
+    assert seen == page.visited  # looked up by the response URL the guard keyed on
+
+
 async def test_cookies_run_no_cookies(tmp_path: Path) -> None:
     page = FakePage()
     assert await cookies.run(page, make_ctx(tmp_path, page)) == []
@@ -483,10 +505,22 @@ def test_error_leak_detect_clean(body: str, status: int) -> None:
 def test_error_leak_detect_stays_fast_on_hostile_bodies(unit: str) -> None:
     """Bodies are target-controlled. Regex blow-up would block the event loop, and asyncio
     timeouts cannot interrupt CPU-bound work, so a hostile page could stall the sandbox."""
-    body = (unit * (MAX_BODY_CHARS // len(unit) + 1))[:MAX_BODY_CHARS]
-    started = time.perf_counter()
-    error_leak.detect(body, 500)
-    assert time.perf_counter() - started < 3.0  # quadratic patterns took ~30 s at 20k chars
+
+    def best_time(size: int) -> float:
+        body = (unit * (size // len(unit) + 1))[:size]
+        runs = []
+        for _ in range(3):  # best of 3: ignore scheduler noise from a busy machine
+            started = time.process_time()  # CPU time: immune to other busy processes
+            error_leak.detect(body, 500)
+            runs.append(time.process_time() - started)
+        return min(runs)
+
+    # Compare scaling, not wall time (CI speed varies): 4x the input costs ~4x when linear
+    # (measured 3.4-5.0x) and ~16x when quadratic (the old patterns took ~30 s at 20k chars).
+    quarter = best_time(MAX_BODY_CHARS // 4)
+    full = best_time(MAX_BODY_CHARS)
+    # Floor of 1 s: Windows CPU clocks tick every ~15 ms, so tiny inputs read as ~0.
+    assert full < max(1.0, 10 * quarter), f"{quarter=:.3f}s {full=:.3f}s: superlinear"
 
 
 def test_error_leak_probe_urls_are_marked_and_same_origin(tmp_path: Path) -> None:
