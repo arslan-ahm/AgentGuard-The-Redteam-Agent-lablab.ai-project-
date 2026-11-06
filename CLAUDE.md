@@ -22,6 +22,13 @@ Skip this only when the first message already names a roster member (e.g. `/star
 4. Confirm their module(s), submission-media items (brief section 17) and first 3 tasks, then start immediately, following brief section 0 (AUTO-START PROTOCOL).
 5. When their modules are done, continue into their submission-media items (brief section 17, `SUBMISSION_PACK.md`) until everything assigned to them is finished.
 6. End every session with a handoff note in `docs/handoff/<name>-<date>.md` (brief section 9). `/handoff` writes it.
+7. Keep the **task board** in `README.md` current (between `STATUS-BOARD:START` and `STATUS-BOARD:END`). See "Task board" below.
+
+## Task board (README.md, mandatory)
+- In the same branch/PR as the work, update **only the current user's rows**: ✅ when the work is merged into `main` and tested, 🟡 while it's in progress or the PR is open (add a short note like `PR open (feat/x)`), ⏳ for not started, ⛔ when blocked (say on what).
+- Then recount that person's row in the summary table at the top of the board (✅ / 🟡 / ⏳ / ⛔ counts must match their task rows).
+- Add a row when a new task is assigned; never delete another person's rows or change their statuses.
+- Never mark ✅ for work that is only written or only typechecked, or that isn't merged yet.
 
 ## Hard rules
 - Work only on the user's assigned module(s) and media items. Other modules are read-only to you.
