@@ -40,6 +40,19 @@ def _origin(url: str) -> tuple[str, str | None, int | None]:
     return parts.scheme, parts.hostname, parts.port or _DEFAULT_PORTS.get(parts.scheme)
 
 
+def _scheme_switch(url: str, target_url: str) -> bool:
+    """Same host, http<->https, both on their scheme's default port (needed by
+    ``security.https_redirect``). Any explicit non-default port is still a different origin."""
+    scheme, host, port = _origin(url)
+    t_scheme, t_host, t_port = _origin(target_url)
+    return (
+        host is not None
+        and host == t_host
+        and port == _DEFAULT_PORTS.get(scheme)
+        and t_port == _DEFAULT_PORTS.get(t_scheme)
+    )
+
+
 @dataclass
 class SameOriginPolicy:
     """Placeholder in-sandbox guard: only the target's own scheme, host and port are allowed.
@@ -60,7 +73,9 @@ class SameOriginPolicy:
                 reason = f"scheme {wanted.scheme!r} not allowed"
             elif wanted.username or wanted.password:
                 reason = "credentials in URL"
-            elif _origin(url) != _origin(self.target_url):
+            elif _origin(url) != _origin(self.target_url) and not _scheme_switch(
+                url, self.target_url
+            ):
                 reason = "outside the target origin"
         except ValueError as exc:  # malformed URL or port: never allowed
             reason = f"malformed URL: {exc}"
