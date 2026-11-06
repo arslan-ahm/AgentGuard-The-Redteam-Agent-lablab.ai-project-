@@ -1,0 +1,96 @@
+# AgentGuard stack (brief 4 and 6.10). Owner: Arslan (Vultr deployment), reviewer: Sohaib.
+#
+#   cp .env.example .env            # then fill in values
+#   docker compose up --build       # web on http://localhost (SITE_ADDRESS=:80)
+#   docker compose build sandbox    # builds the sandbox image used per scan task
+#
+# The same file runs on the Vultr VM with SITE_ADDRESS set to the public domain (HTTPS).
+
+name: agentguard
+
+x-backend-env: &backend-env
+  DATABASE_URL: postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+  REDIS_URL: redis://redis:6379/0
+  SECRET_KEY: ${SECRET_KEY}
+  VULTR_INFERENCE_BASE_URL: ${VULTR_INFERENCE_BASE_URL:-}
+  VULTR_INFERENCE_API_KEY: ${VULTR_INFERENCE_API_KEY:-}
+  VULTR_INFERENCE_MODEL: ${VULTR_INFERENCE_MODEL:-}
+  SANDBOX_IMAGE: ${SANDBOX_IMAGE:-agentguard-sandbox:local}
+  SANDBOX_CPU_LIMIT: ${SANDBOX_CPU_LIMIT:-1.0}
+  SANDBOX_MEM_LIMIT: ${SANDBOX_MEM_LIMIT:-1g}
+  SANDBOX_TIMEOUT_S: ${SANDBOX_TIMEOUT_S:-120}
+  ALLOWED_ORIGINS: ${ALLOWED_ORIGINS}
+  GITHUB_TOKEN: ${GITHUB_TOKEN:-}
+  PUBLIC_BASE_URL: ${PUBLIC_BASE_URL}
+
+services:
+  web:
+    build: { context: ., dockerfile: frontend/Dockerfile }
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:-:80}
+    ports: ["80:80", "443:443"]
+    volumes: [caddy-data:/data, caddy-config:/config]
+    depends_on:
+      backend: { condition: service_healthy }
+    restart: unless-stopped
+
+  backend:
+    build: { context: ., dockerfile: backend/Dockerfile }
+    environment: *backend-env
+    expose: ["8000"]
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    restart: unless-stopped
+
+  worker:
+    build: { context: ., dockerfile: backend/Dockerfile }
+    command: ["rq", "worker", "--url", "redis://redis:6379/0", "agentguard"]
+    environment: *backend-env
+    healthcheck:
+      disable: true  # the image's /healthz check is for the API; the worker serves no HTTP
+    # Launching sandboxes needs access to a Docker engine. How the worker gets it (socket
+    # proxy limited to container create/start/kill, rootless Docker, etc.) is Arslan's
+    # Sandbox executor decision (brief 6.4). The sandbox containers themselves NEVER get it.
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes: [postgres-data:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  redis:
+    image: redis:7.4-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes: [redis-data:/data]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  # Build-only: one container of this image is started per scan task by the launcher,
+  # never by compose. `docker compose build sandbox` tags it as SANDBOX_IMAGE.
+  sandbox:
+    build: { context: ., dockerfile: sandbox-worker/Dockerfile }
+    image: ${SANDBOX_IMAGE:-agentguard-sandbox:local}
+    profiles: ["build-only"]
+
+volumes:
+  postgres-data:
+  redis-data:
+  caddy-data:
+  caddy-config:

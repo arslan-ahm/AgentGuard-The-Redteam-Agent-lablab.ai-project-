@@ -1,0 +1,38 @@
+# Secrets (never commit; use .env.example)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Claude Code personal settings
+.claude/settings.local.json
+CLAUDE.local.md
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+
+# Node / frontend
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+
+# Local data and scan output
+*.sqlite3
+*.db
+sandbox-worker/out/
+playwright-report/
+test-results/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

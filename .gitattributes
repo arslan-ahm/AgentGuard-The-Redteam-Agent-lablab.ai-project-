@@ -1,0 +1,5 @@
+# Keep LF everywhere so Docker builds and scripts work from any OS checkout
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.pdf binary
