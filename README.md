@@ -118,6 +118,7 @@ Every test runs inside a locked-down **Docker sandbox**:
 ```bash
 git clone git@github.com:arslan-ahm/AgentGuard-The-Redteam-Agent-lablab.ai-project-.git agentguard
 cd agentguard
+git config core.hooksPath .githooks       # 🔒 turns on the "no commits to main" safety hooks
 ```
 
 ### 3. ▶️ Run it (two terminal windows)
@@ -225,9 +226,45 @@ Our project is set up so **Claude knows who you are and what to build**:
 
 ---
 
+## 🌿 How code gets into `main`
+
+> [!IMPORTANT]
+> 🚫 **Nobody, human or AI agent, commits or pushes to `main`.** Every change goes through a branch and a reviewed pull request, and the automatic checks must pass.
+
+```mermaid
+flowchart LR
+    A["🌿 Branch<br/>feat/sandbox-limits"] --> B["💻 Code + commit"]
+    B --> C["⬆️ Push branch"]
+    C --> D["📬 Open PR"]
+    D --> E{"🤖 CI checks<br/>all green?"}
+    E -- "❌ no" --> B
+    E -- "✅ yes" --> F["👀 Review by<br/>Arslan + Ayesha"]
+    F -- "changes requested" --> B
+    F -- "approved" --> G["🔀 Merge into main"]
+```
+
+```bash
+git switch -c feat/<module>-<topic> origin/main   # 1. new branch from the latest main
+git commit -m "feat(sandbox): add memory limit"   # 2. commit
+git push -u origin feat/<module>-<topic>          # 3. push the branch
+gh pr create --base main --fill                   # 4. open the PR (or use the GitHub website)
+```
+
+### 🤖 What CI checks on every PR
+
+| Check | Makes sure that… |
+|---|---|
+| 🏷️ PR rules | The branch is named `type/topic` and the title reads like `feat(module): summary` |
+| 🧠 Backend | Tests pass, code style is clean, types are correct, dependencies are locked |
+| 📦 Sandbox worker | Same as the backend |
+| 🖥️ Frontend | Lint, formatting and tests pass, and the site builds with strict TypeScript |
+| 🐳 Docker | The compose file is valid and **every image actually builds** |
+| 🔑 Secret scan | No passwords or API keys were committed (whole history) |
+| ✅ **CI passed** | All of the above. GitHub won't allow a merge without it |
+
 ## ✅ Before you open a pull request
 
-Run the checks for the part you changed. All must pass ✔️
+Run the checks for the part you changed so CI passes the first time. All must pass ✔️
 
 ```bash
 # 🧠 backend
@@ -241,7 +278,7 @@ cd frontend && bun run test && bun run lint && bun run format:check && bun run b
 ```
 
 **Team rules in short:**
-- 🌿 Work on a branch: `feat/<module>-<topic>` (e.g. `feat/sandbox-limits`)
+- 🌿 Work on a branch: `feat/<module>-<topic>` (e.g. `feat/sandbox-limits`), never on `main`
 - 💬 Commit messages like `feat(sandbox): add memory limit`
 - 📏 Keep PRs small (under ~400 lines), one module each
 - 🔒 Never commit passwords, keys or `.env`

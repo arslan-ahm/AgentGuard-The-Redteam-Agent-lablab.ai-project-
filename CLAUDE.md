@@ -29,8 +29,16 @@ Skip this only when the first message already names a roster member (e.g. `/star
 - Tests, docs, and a handoff note (section 9) are part of every task.
 - Only describe features in the deck, video and README that actually work in the deployed demo.
 - Never commit secrets (`.env` is gitignored; only `.env.example` is committed). Never weaken containment, policy, or approval controls.
-- Use branch `feat/<module>-<topic>`, Conventional Commits, small PRs (the template is in `.github/`). Never merge your own PR.
+- Follow the Git workflow above: branch → checks → push → PR → review → merge on GitHub. Small PRs (under ~400 lines).
 - Commit as the person running the session, with their own git identity.
+
+## Git workflow (mandatory: nothing is ever committed or pushed to `main`)
+1. At session start, run `git config core.hooksPath .githooks` (enables the hooks that block commits and pushes to `main`), then `git fetch origin`.
+2. Before writing any code, branch from the latest main: `git switch -c feat/<module>-<topic> origin/main` (types: feat, fix, docs, chore, test, refactor, ci, perf; lowercase). One module per branch. If the branch already exists, switch to it and `git rebase origin/main`.
+3. Commit with Conventional Commits (`feat(sandbox): add pids limit`), using the user's own git identity. Never use `--no-verify`, and never bypass or edit the hooks.
+4. Run your area's checks (README "Checks") until green, then `git push -u origin <branch>`.
+5. Open a PR into `main` with `gh pr create --base main --fill`, filling in the PR template; the title is a Conventional Commit. Request the reviewers from brief section 2 (Arslan and Ayesha).
+6. CI must be green ("CI passed"). Fix failures on the same branch and push again. **Never merge your own PR, never push to `main`, never force-push to someone else's branch.** Merging happens on GitHub after review approval.
 
 ## Code layout and commands
 - Ownership map and local setup: `README.md`. Frozen contracts in code: `shared/contracts-py` (Python) and `frontend/src/api/contracts.ts` (TS). Never redefine them inside a module.

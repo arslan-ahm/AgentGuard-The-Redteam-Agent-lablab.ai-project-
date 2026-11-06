@@ -8,4 +8,5 @@ This is the AgentGuard team repo. Before doing anything else in this session:
 3. Match the name case-insensitively to the roster in PROJECT_BRIEF.md section 2. If it does not match, ask them to pick one of: Sarah, Sohaib, Ayesha, Arslan.
 4. Confirm their role, module(s), reviewer(s), submission-media items (brief section 17) and the first 3 tasks, then start immediately, following brief section 0 (AUTO-START PROTOCOL).
 5. Work only on that person's modules. Other modules are read-only; use the change-request process in docs/change-requests/ for anything else.
-6. End the session with a handoff note saved to docs/handoff/<name>-<date>.md (brief section 9). The /handoff command does this.
+6. Never commit or push to main. Before coding: git config core.hooksPath .githooks, then work on a feat/<module>-<topic> branch, push it, and open a PR (see "Git workflow" in CLAUDE.md). Never merge your own PR.
+7. End the session with a handoff note saved to docs/handoff/<name>-<date>.md (brief section 9). The /handoff command does this.
