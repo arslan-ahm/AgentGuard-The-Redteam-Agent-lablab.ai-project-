@@ -37,7 +37,22 @@ Test checks with a fake page and a fake `ctx` (see `tests/test_runner.py`). Unit
 | `security.https_redirect` | http must 301/308 to https on the same host; an http-only target with no working TLS is `high`. Never follows redirects; skipped on non-default ports | ≤ 2 GETs |
 | `security.error_leak` | Stack traces (Python, Node, Java, PHP, .NET, Django, Rails, Werkzeug) and SQL errors on any status; internal paths and server versions on error statuses only | 3 GETs: the page, `/<marker>`, `?id=<marker>` |
 
-`params.path` (same-origin path only) picks the page; `params.probe_marker` sets the marked probe value (default `agentguard-probe-<random>`). Evidence never includes `Set-Cookie`, `Authorization` or other non-whitelisted headers (`checks/security/_common.py:EVIDENCE_HEADERS`).
+| `security.url_session_leak` | Session ids (`jsessionid`, `PHPSESSID`, `sid`, `session_id`...) and auth tokens (`access_token`, `api_key`...) in the final page URL, in `;jsessionid=` path parameters or in links on the page. Values of 8+ characters only; **values are never recorded** (masked URL + length) | 1 page load |
+| `security.open_redirect` | Redirect parameters (`next`, `url`, `redirect`, `return_to`...) found in same-origin links, then the 4 common ones, set to `https://<marker>.invalid/` (reserved TLD, never resolves). A hit is a `Location` to that host or a meta refresh. Stops at the first hit | page load + ≤ 8 GETs, redirects never followed |
+| `security.reflected_input` | GET form fields, link parameters and `q`/`search`/`query`/`s` sent `<marker>"'<<marker>>`: an inert tag, no script. Reported only if the raw tag comes back in an HTML response; escaped output is fine. Responses are fetched, never rendered | page load + ≤ 6 GETs |
+| `security.exposed_endpoints` | `/admin` (admin content, no login form), `/debug` (Werkzeug/Django/phpinfo/profilers), `/.env` (≥ 2 `KEY=` lines, **names only, values never recorded**), `/server-status` (mod_status). A marked missing page is fetched first so catch-all/soft-404 sites aren't reported | 5 GETs, redirects never followed |
+| `security.login_rate_probe` | Submits the login form (`params.path`) with `<marker>@example.invalid` and a wrong password, reloading it each time for a fresh CSRF token. No finding if a 423/429, `Retry-After`, lockout message or CAPTCHA appears. Skips forms that post off-origin, sign-up forms (2 password fields) and GET forms. `medium`, confidence 0.6 | **max 3** POSTs, hard-coded (`params.attempts` can only lower it, and then no finding is reported) |
+
+`params.path` (same-origin path only) picks the page; `params.probe_marker` sets the marked probe value (default `agentguard-probe-<random>`). Evidence never includes `Set-Cookie`, `Authorization` or other non-whitelisted headers (`checks/security/_common.py:EVIDENCE_HEADERS`). Probes use `_common.fetch`: policy check first, then one request with `max_redirects=0`, so a redirect can't take a check to a URL the policy never saw.
+
+### Containment demo trigger (brief 6.9)
+
+```json
+{"task_id": "t-demo", "check_id": "security.exposed_endpoints", "description": "containment demo",
+ "params": {"containment_demo": true}, "timeout_s": 30}
+```
+
+The check asks the policy for `http://169.254.169.254/latest/meta-data/` (cloud metadata) before doing anything else. The policy blocks it, so the task ends `blocked` with exit code 3, the blocked event is in `policy_events` (for the API to write to the audit log), and the launcher destroys the sandbox. Nothing is ever sent to that address: if a broken policy allowed it, the check raises `ContainmentNotEnforced` and the task ends `error`. The flag must be the JSON literal `true`, and params can't change the URL.
 
 ## Policy placeholder
 
