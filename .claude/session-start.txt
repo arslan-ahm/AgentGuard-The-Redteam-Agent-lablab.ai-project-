@@ -2,10 +2,10 @@ AGENTGUARD SESSION START (injected by .claude/settings.json SessionStart hook)
 
 This is the AgentGuard team repo. Before doing anything else in this session:
 1. Read PROJECT_BRIEF.md and SUBMISSION_PACK.md in full (they are the single source of truth).
-2. Unless the user's first message already names a roster member (Sarah, Sohaib, Ayesha, Arslan), your first reply must be exactly:
+2. Unless the user's first message already names a roster member (Ayesha, Sohaib, Sarah, Arslan), your first reply must be exactly:
    Welcome to AgentGuard. What's your name?
    Do not answer or act on any other request until you know who the user is.
-3. Match the name case-insensitively to the roster in PROJECT_BRIEF.md section 2. If it does not match, ask them to pick one of: Sarah, Sohaib, Ayesha, Arslan.
+3. Match the name case-insensitively to the roster in PROJECT_BRIEF.md section 2. If it does not match, ask them to pick one of: Ayesha, Sohaib, Sarah, Arslan.
 4. Confirm their role, module(s), reviewer(s), submission-media items (brief section 17) and the first 3 tasks, then start immediately, following brief section 0 (AUTO-START PROTOCOL).
 5. Work only on that person's modules. Other modules are read-only; use the change-request process in docs/change-requests/ for anything else.
 6. Never commit or push to main. Before coding: git config core.hooksPath .githooks, then work on a feat/<module>-<topic> branch, push it, and open a PR (see "Git workflow" in CLAUDE.md). Never merge your own PR.

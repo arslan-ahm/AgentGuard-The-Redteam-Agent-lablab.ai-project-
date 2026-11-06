@@ -18,7 +18,7 @@ The pack has five core files (plus the Claude Code tooling listed under Option B
 Tips:
 - One chat per module task keeps context clean. When a chat gets long, ask "Write the handoff note", then start a new chat.
 - In a Project chat Claude gives you code and files to copy into the repo. To have it write directly into the repo, use Option B.
-- When either brief file changes, re-upload it to everyone's project. Only Arslan and Ayesha approve changes.
+- When either brief file changes, re-upload it to everyone's project. Only Arslan and Sarah approve changes.
 
 ## Option B — Claude Code (writes directly into the repo)
 
@@ -42,9 +42,9 @@ Personal overrides go in `.claude/settings.local.json` or `CLAUDE.local.md`. Bot
 
 | Name | Code modules | Submission media |
 |---|---|---|
-| Sarah | Web app / UI, Report + remediation | README, pitch deck, video lead, screenshots, LabLab text, launch post |
+| Ayesha | Web app / UI, Report + remediation | README, pitch deck, video lead, screenshots, LabLab text, launch post |
 | Sohaib | API + orchestration, QA checks | Demo store + seed data, API docs, curl examples |
-| Ayesha | Agent planner, Verifier + scoring | AI section + eval table, Q&A prep, deck slides 5 and 9 |
+| Sarah | Agent planner, Verifier + scoring | AI section + eval table, Q&A prep, deck slides 5 and 9 |
 | Arslan | Sandbox executor, Security checks, Policy + audit, Vultr deployment | Architecture diagram, SECURITY.md, Vultr write-up, live demo uptime, containment segment |
 
 ## Schedule (D = LabLab deadline)
@@ -53,4 +53,4 @@ D-4 end-to-end stub flow works · D-3 real components merged and deployed · D-2
 
 ## Review flow
 
-Author opens a PR, Arslan and Ayesha review, then merge. Contract changes use the change-request process in brief section 8.
+Author opens a PR, Arslan and Sarah review, then merge. Contract changes use the change-request process in brief section 8.

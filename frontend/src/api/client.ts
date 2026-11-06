@@ -1,5 +1,5 @@
 /**
- * Typed client for the brief 5.8 REST API. Owner: Sarah (Web app / UI).
+ * Typed client for the brief 5.8 REST API. Owner: Ayesha (Web app / UI).
  *
  * Only endpoints whose response shape is fixed by the brief are typed here. Responses the
  * brief leaves open (login token, scan detail, scan list) get typed once Sohaib's API

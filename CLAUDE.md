@@ -5,7 +5,7 @@ Whatever the user's first message says, your first reply is exactly:
 
 > Welcome to AgentGuard. What's your name?
 
-Skip this only when the first message already names a roster member (e.g. `/start Sarah` or "I'm Sohaib"). Don't act on any other request until you know who the user is.
+Skip this only when the first message already names a roster member (e.g. `/start Ayesha` or "I'm Sohaib"). Don't act on any other request until you know who the user is.
 
 ## Then
 1. Read `@PROJECT_BRIEF.md` and `@SUBMISSION_PACK.md` in full. They are the single source of truth; if anything conflicts, the brief wins.
@@ -13,10 +13,10 @@ Skip this only when the first message already names a roster member (e.g. `/star
 
    | Name | Modules | Reviewer(s) |
    |---|---|---|
-   | Sarah | Web app / UI; Report + remediation | Ayesha |
-   | Sohaib | API + orchestration; QA checks | Arslan (API), Ayesha (QA) |
-   | Ayesha | Agent planner; Verifier + scoring | Arslan |
-   | Arslan | Sandbox executor; Security checks; Policy + audit; Vultr deployment | Ayesha (Sohaib for deployment) |
+   | Ayesha | Web app / UI; Report + remediation | Sarah |
+   | Sohaib | API + orchestration; QA checks | Arslan (API), Sarah (QA) |
+   | Sarah | Agent planner; Verifier + scoring | Arslan |
+   | Arslan | Sandbox executor; Security checks; Policy + audit; Vultr deployment | Sarah (Sohaib for deployment) |
 
 3. Check `docs/handoff/` for that person's latest note and continue from its "Next 3 tasks".
 4. Confirm their module(s), reviewer(s), submission-media items (brief section 17) and first 3 tasks, then start immediately, following brief section 0 (AUTO-START PROTOCOL).
@@ -25,7 +25,7 @@ Skip this only when the first message already names a roster member (e.g. `/star
 
 ## Hard rules
 - Work only on the user's assigned module(s) and media items. Other modules are read-only to you.
-- Follow the frozen contracts in brief section 5 exactly. Cross-module or contract changes go through brief section 8: a file in `docs/change-requests/` (template there), approved by Arslan and Ayesha. Use stubs meanwhile.
+- Follow the frozen contracts in brief section 5 exactly. Cross-module or contract changes go through brief section 8: a file in `docs/change-requests/` (template there), approved by Arslan and Sarah. Use stubs meanwhile.
 - Tests, docs, and a handoff note (section 9) are part of every task.
 - Only describe features in the deck, video and README that actually work in the deployed demo.
 - Never commit secrets (`.env` is gitignored; only `.env.example` is committed). Never weaken containment, policy, or approval controls.
@@ -37,7 +37,7 @@ Skip this only when the first message already names a roster member (e.g. `/star
 2. Before writing any code, branch from the latest main: `git switch -c feat/<module>-<topic> origin/main` (types: feat, fix, docs, chore, test, refactor, ci, perf; lowercase). One module per branch. If the branch already exists, switch to it and `git rebase origin/main`.
 3. Commit with Conventional Commits (`feat(sandbox): add pids limit`), using the user's own git identity. Never use `--no-verify`, and never bypass or edit the hooks.
 4. Run your area's checks (README "Checks") until green, then `git push -u origin <branch>`.
-5. Open a PR into `main` with `gh pr create --base main --fill`, filling in the PR template; the title is a Conventional Commit. Request the reviewers from brief section 2 (Arslan and Ayesha).
+5. Open a PR into `main` with `gh pr create --base main --fill`, filling in the PR template; the title is a Conventional Commit. Request the reviewers from brief section 2 (Arslan and Sarah).
 6. CI must be green ("CI passed"). Fix failures on the same branch and push again. **Never merge your own PR, never push to `main`, never force-push to someone else's branch.** Merging happens on GitHub after review approval.
 
 ## Code layout and commands

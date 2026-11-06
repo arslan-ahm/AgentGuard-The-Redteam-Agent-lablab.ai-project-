@@ -10,22 +10,22 @@ Rule: **every claim in the deck, video and README must be true of the deployed d
 
 | # | Deliverable | Owner (does the work) | Reviewer | Status |
 |---|---|---|---|---|
-| 1 | Public GitHub repo, clean history, MIT/Apache license | Sarah | Arslan | [ ] |
-| 2 | README (template in section 5) | Sarah | Ayesha | [ ] |
+| 1 | Public GitHub repo, clean history, MIT/Apache license | Ayesha | Arslan | [ ] |
+| 2 | README (template in section 5) | Ayesha | Sarah | [ ] |
 | 3 | Architecture diagram (`docs/architecture-diagram.png`) | Arslan | Sohaib | [ ] |
-| 4 | `SECURITY.md` + `docs/containment-policy.md` | Arslan | Ayesha | [ ] |
+| 4 | `SECURITY.md` + `docs/containment-policy.md` | Arslan | Sarah | [ ] |
 | 5 | Vultr integration write-up (README section) | Arslan | Sohaib | [ ] |
 | 6 | Live demo URL + demo credentials, uptime-checked | Arslan | Sohaib | [ ] |
-| 7 | Flawed demo store, reproducible (`scripts/demo-store/`) + seed data | Sohaib | Ayesha | [ ] |
+| 7 | Flawed demo store, reproducible (`scripts/demo-store/`) + seed data | Sohaib | Sarah | [ ] |
 | 8 | API overview + curl examples (README section) | Sohaib | Arslan | [ ] |
-| 9 | AI section: planner/verifier explanation, prompts, fallback, false-positive results table | Ayesha | Arslan | [ ] |
-| 10 | Pitch deck (section 2) | Sarah (content from all) | Ayesha | [ ] |
-| 11 | Demo video 3–4 min (section 3) | Sarah (lead), all record their segments | Arslan, Ayesha | [ ] |
-| 12 | Screenshots set (section 6) | Sarah | Ayesha | [ ] |
-| 13 | LabLab submission text (section 4) | Sarah | all | [ ] |
-| 14 | Q&A prep (section 7) | Ayesha + Arslan | Sarah | [ ] |
-| 15 | Social/launch post (section 8) | Sarah | Ayesha | [ ] |
-| 16 | Team contributions + known limitations | everyone adds own lines | Sarah | [ ] |
+| 9 | AI section: planner/verifier explanation, prompts, fallback, false-positive results table | Sarah | Arslan | [ ] |
+| 10 | Pitch deck (section 2) | Ayesha (content from all) | Sarah | [ ] |
+| 11 | Demo video 3–4 min (section 3) | Ayesha (lead), all record their segments | Arslan, Sarah | [ ] |
+| 12 | Screenshots set (section 6) | Ayesha | Sarah | [ ] |
+| 13 | LabLab submission text (section 4) | Ayesha | all | [ ] |
+| 14 | Q&A prep (section 7) | Sarah + Arslan | Ayesha | [ ] |
+| 15 | Social/launch post (section 8) | Ayesha | Sarah | [ ] |
+| 16 | Team contributions + known limitations | everyone adds own lines | Ayesha | [ ] |
 
 ---
 
@@ -43,12 +43,12 @@ Format: build as a Slides artifact if available in the session; otherwise a .ppt
 | 6 | Architecture | Web app + API, DB, queue, Vultr Serverless Inference, disposable Docker Playwright sandboxes. | `architecture-diagram.png` |
 | 7 | Why Vultr | VM hosts app, API, DB and workers; Serverless Inference does planning and verification; fast disposable compute for sandboxes. State exactly what is used. | Vultr components diagram |
 | 8 | Containment-first | One container per task; CPU/mem/pid/time limits; non-root; no Docker socket; egress blocked to private IPs and metadata; credentials never reach the LLM; immutable audit log. | Screenshot of "Blocked by policy" event |
-| 9 | AI agents | Planner (structured plans, deterministic fallback), Verifier (re-check, dedupe, confidence). Prompt-injection defense. Results table from Ayesha's eval. | Before/after false-positive numbers |
+| 9 | AI agents | Planner (structured plans, deterministic fallback), Verifier (re-check, dedupe, confidence). Prompt-injection defense. Results table from Sarah's eval. | Before/after false-positive numbers |
 | 10 | Evidence-backed findings | One finding card: screenshot, network summary, repro steps, fix. | Finding card screenshot |
 | 11 | Business value + roadmap | Who buys: product/QA/security teams, agencies, startups pre-launch. Roadmap: CI/CD integration, more profiles, auth flows, scheduled scans. Mark clearly as future work. | Simple 3-column roadmap |
-| 12 | Team + links | Sarah, Sohaib, Ayesha, Arslan with roles; repo URL; live demo URL; video link; QR code. | QR codes |
+| 12 | Team + links | Ayesha, Sohaib, Sarah, Arslan with roles; repo URL; live demo URL; video link; QR code. | QR codes |
 
-Speaker notes: 2–3 sentences per slide, max 20 seconds each. Ayesha's Claude drafts slides 5, 9; Arslan's slides 6, 7, 8; Sohaib's slide 10 data and demo store; Sarah assembles and designs.
+Speaker notes: 2–3 sentences per slide, max 20 seconds each. Sarah's Claude drafts slides 5, 9; Arslan's slides 6, 7, 8; Sohaib's slide 10 data and demo store; Ayesha assembles and designs.
 
 ---
 
@@ -58,14 +58,14 @@ Record at 1080p, clean browser profile, zoom 125%, hide bookmarks and notificati
 
 | Time | Scene | On screen | Narration (draft) | Who |
 |---|---|---|---|---|
-| 0:00–0:20 | Hook | Title + broken checkout clip | "Every release ships with bugs and security holes nobody caught. AgentGuard red-teams your web app before your users do." | Sarah |
-| 0:20–0:45 | Start scan | New Scan form: demo store URL, Full Audit, authorization checkbox | "I give AgentGuard a URL and choose a Full Audit. It will only run safe, non-destructive checks on sites I'm authorized to test." | Sarah |
-| 0:45–1:20 | Planning + sandbox | Live progress: planning, sandbox launched | "The planner, running on Vultr Serverless Inference, builds a test plan. Each task launches in a fresh Docker sandbox on a Vultr VM." | Ayesha |
+| 0:00–0:20 | Hook | Title + broken checkout clip | "Every release ships with bugs and security holes nobody caught. AgentGuard red-teams your web app before your users do." | Ayesha |
+| 0:20–0:45 | Start scan | New Scan form: demo store URL, Full Audit, authorization checkbox | "I give AgentGuard a URL and choose a Full Audit. It will only run safe, non-destructive checks on sites I'm authorized to test." | Ayesha |
+| 0:45–1:20 | Planning + sandbox | Live progress: planning, sandbox launched | "The planner, running on Vultr Serverless Inference, builds a test plan. Each task launches in a fresh Docker sandbox on a Vultr VM." | Sarah |
 | 1:20–1:55 | Real execution | Playwright running checkout and login, events streaming | "These are real browser tests: checkout, login, forms, links, console errors." | Sohaib |
-| 1:55–2:30 | Findings + evidence | Findings list; open leaked stack trace: screenshot, network summary, repro steps, fix | "Every finding comes with a screenshot, request evidence, reproduction steps and a suggested fix. The verifier re-checks each one to cut false positives." | Ayesha |
+| 1:55–2:30 | Findings + evidence | Findings list; open leaked stack trace: screenshot, network summary, repro steps, fix | "Every finding comes with a screenshot, request evidence, reproduction steps and a suggested fix. The verifier re-checks each one to cut false positives." | Sarah |
 | 2:30–3:05 | Containment moment | Trigger private-network request; red "Blocked by policy"; sandbox destroyed; audit log entry | "Now an unsafe action: a request to an internal address. The policy engine blocks it, logs it immutably, and destroys the sandbox." | Arslan |
-| 3:05–3:30 | Report + decision | Report page: score, prioritized fixes, "Fix before release"; approval dialog for GitHub issue | "The result is a clear release decision. Nothing is sent or filed without human approval." | Sarah |
-| 3:30–3:50 | Close | Slide 12 with links | "AgentGuard: real execution, verifiable evidence, containment first. Built on Vultr." | Sarah |
+| 3:05–3:30 | Report + decision | Report page: score, prioritized fixes, "Fix before release"; approval dialog for GitHub issue | "The result is a clear release decision. Nothing is sent or filed without human approval." | Ayesha |
+| 3:30–3:50 | Close | Slide 12 with links | "AgentGuard: real execution, verifiable evidence, containment first. Built on Vultr." | Ayesha |
 
 Shot list extras: 5 seconds of architecture diagram over the planning scene; captions on for key terms; background music low or none; export MP4 H.264; upload to YouTube (unlisted is fine unless the form needs public) and keep a local backup copy.
 
@@ -86,11 +86,11 @@ Teams ship broken forms, failed checkouts, leaked error details and weak securit
 
 **Links:** GitHub repo, live demo URL, demo credentials, video URL, slides PDF.
 
-**Cover image:** 16:9 screenshot of the report page with the decision banner (Sarah).
+**Cover image:** 16:9 screenshot of the report page with the decision banner (Ayesha).
 
 ---
 
-## 5. README template (Sarah fills; each owner supplies own section)
+## 5. README template (Ayesha fills; each owner supplies own section)
 
 ```
 # AgentGuard
@@ -105,7 +105,7 @@ Demo login: <user> / <password>   (demo store target: <URL>)
 ## Architecture (diagram + 5-line explanation)
 ## How Vultr powers AgentGuard   <- Arslan: VM, Serverless Inference, sandbox workers, region
 ## Sandbox containment design    <- Arslan: controls table + link to docs/containment-policy.md
-## AI agents                     <- Ayesha: planner, verifier, fallback, prompt-injection defense, eval results
+## AI agents                     <- Sarah: planner, verifier, fallback, prompt-injection defense, eval results
 ## Security testing ethics and scope  (authorized targets only, safe checks, out of scope list)
 ## Local setup (prereqs, clone, cp .env.example .env, docker compose up, open URL, run demo scan)
 ## Environment variables (table from .env.example)
@@ -116,7 +116,7 @@ Demo login: <user> / <password>   (demo store target: <URL>)
 ## Known limitations (honest list)
 ## License
 ```
-README must work from a clean clone: Sarah (or a teammate who didn't write the code) follows it verbatim on a fresh machine before submission.
+README must work from a clean clone: Ayesha (or a teammate who didn't write the code) follows it verbatim on a fresh machine before submission.
 
 ---
 
@@ -135,7 +135,7 @@ README must work from a clean clone: Sarah (or a teammate who didn't write the c
 
 ---
 
-## 7. Judge Q&A prep (Ayesha + Arslan draft answers, everyone reads)
+## 7. Judge Q&A prep (Sarah + Arslan draft answers, everyone reads)
 
 - **Is this just a vulnerability scanner?** No: it executes real browser workflows (checkout, login, forms) and combines QA and safe security checks with evidence and verification.
 - **How do you prevent it being used to attack sites?** Authorization attestation recorded in the audit log, safe non-destructive checks only, rate limits, no exploitation or brute force, private networks blocked.
@@ -144,7 +144,7 @@ README must work from a clean clone: Sarah (or a teammate who didn't write the c
 - **How is the sandbox contained?** List of controls (section 12 of the brief) plus the live containment demo.
 - **How is Vultr used and why?** Exact components; fast disposable compute for sandboxes; Serverless Inference for planning and verification.
 - **What happens to credentials?** Short-lived broker injection, never in prompts, redacted from logs.
-- **What does it cost to run a scan?** (Ayesha measures: tokens per scan and sandbox time on the demo store.)
+- **What does it cost to run a scan?** (Sarah measures: tokens per scan and sandbox time on the demo store.)
 - **What's next?** CI/CD integration, scheduled scans, richer auth flows, more profiles.
 - **Limitations?** Honest list from README.
 

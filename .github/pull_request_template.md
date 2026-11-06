@@ -9,7 +9,7 @@ Owner:
 
 ## Contract impact
 - [ ] No change to PROJECT_BRIEF.md section 5 contracts
-- [ ] Yes. Change request: `docs/change-requests/CR-<n>-<name>.md` (approved by Arslan and Ayesha)
+- [ ] Yes. Change request: `docs/change-requests/CR-<n>-<name>.md` (approved by Arslan and Sarah)
 
 ## Screenshots (UI changes)
 
