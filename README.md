@@ -80,6 +80,17 @@ Every test runs inside a locked-down **Docker sandbox**:
 - 🗑️ It's destroyed after every task, including when something goes wrong
 - 📝 Every allowed *and* blocked action is written to a log that can't be edited
 
+| Control | How |
+|---|---|
+| One box per test | fresh container per task, `--rm` + forced removal on success, failure, timeout and policy violation |
+| Limits | CPU, memory (no swap), 256 processes, wall-clock kill |
+| No privileges | non-root, all Linux capabilities dropped, no-new-privileges, read-only filesystem |
+| No keys to the house | no Docker socket, no host folders (only its own `in`/`out`), no secrets |
+| Network | URL policy + DNS pinning, in-browser request guard, and a host firewall that drops private IPs, localhost and `169.254.169.254` |
+| Evidence and logs | secrets redacted; hash-chained audit log that detects any edit |
+
+Full details and how each control is tested: [docs/containment-policy.md](docs/containment-policy.md) · Reporting a security issue: [SECURITY.md](SECURITY.md)
+
 ---
 
 ## 🚦 Project status
@@ -285,12 +296,29 @@ cd frontend && bun run test && bun run lint && bun run format:check && bun run b
 
 ## ☁️ How Vultr powers AgentGuard
 
-| Vultr service | What we use it for |
-|---|---|
-| 🖥️ **Vultr VM** (cloud computer) | Hosts the website, API, database and the sandboxes |
-| 🧠 **Vultr Serverless Inference** (cloud AI) | Plans the tests and helps verify findings |
+![AgentGuard architecture](docs/architecture-diagram.png)
 
-> The exact setup (region, machine size, AI model) is added here once it's deployed.
+| Vultr service | What we use it for | Why Vultr |
+|---|---|---|
+| 🖥️ **Vultr Cloud Compute VM** (Ubuntu 24.04, Docker Compose) | Runs the website (Caddy, automatic HTTPS), the API, the background worker, PostgreSQL, Redis, **and every disposable sandbox**: one fresh Docker container per test, destroyed afterwards | We control the Docker engine and the host firewall, so each sandbox can be cut off from private networks and the cloud metadata service at the network level |
+| 🧠 **Vultr Serverless Inference** (OpenAI-compatible API) | Writes the test plan for each scan and the executive summary | No GPU servers to run. It only ever sees redacted, shortened page text, never passwords or cookies. If it's unavailable, built-in fallback plans keep scans working |
+| 🧱 **Vultr Firewall** | Lets in only web traffic (80/443) and SSH from our IP | A second wall in front of the VM's own firewall |
+
+**How a scan uses them:**
+
+1. You submit a URL on the VM-hosted site.
+2. Serverless Inference plans the tests.
+3. The worker on the VM starts a locked-down Playwright container for each test.
+4. Results come back as evidence.
+5. The container is deleted.
+
+| Deployment fact | Value |
+|---|---|
+| Region | _filled in after deploy_ |
+| VM size | 4 vCPU / 8 GB recommended (each sandbox is capped at 1 CPU / 1 GB) |
+| Inference model | _the `VULTR_INFERENCE_MODEL` used in the demo, filled in after deploy_ |
+
+Step-by-step deployment: [docs/deploy-vultr.md](docs/deploy-vultr.md).
 
 ---
 
