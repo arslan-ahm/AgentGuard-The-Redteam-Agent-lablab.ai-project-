@@ -1,0 +1,10 @@
+#!/bin/sh
+# AgentGuard: never commit directly on main. Work on a branch and open a PR.
+# Enable once per clone:  git config core.hooksPath .githooks
+branch=$(git symbolic-ref --short HEAD 2>/dev/null)
+if [ "$branch" = "main" ] || [ "$branch" = "master" ]; then
+  echo "BLOCKED: no direct commits to '$branch'."
+  echo "Create a branch first:  git switch -c feat/<module>-<topic>"
+  exit 1
+fi
+exit 0

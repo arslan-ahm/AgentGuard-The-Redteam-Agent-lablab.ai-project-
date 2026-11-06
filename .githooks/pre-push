@@ -1,0 +1,21 @@
+#!/bin/sh
+# AgentGuard: never push to main, and only push branches named <type>/<topic>.
+# Changes reach main only through a reviewed pull request with green CI.
+# Enable once per clone:  git config core.hooksPath .githooks
+status=0
+while read -r local_ref local_sha remote_ref remote_sha; do
+  case "$remote_ref" in
+    refs/heads/main|refs/heads/master)
+      echo "BLOCKED: pushing to '${remote_ref#refs/heads/}' is not allowed. Push your branch and open a PR."
+      status=1
+      ;;
+    refs/heads/*)
+      name=${remote_ref#refs/heads/}
+      if ! echo "$name" | grep -Eq '^(feat|fix|docs|chore|test|refactor|ci|perf)/[a-z0-9][a-z0-9._-]*$'; then
+        echo "BLOCKED: branch '$name' must look like feat/<module>-<topic> (lowercase)."
+        status=1
+      fi
+      ;;
+  esac
+done
+exit $status
