@@ -1,0 +1,6 @@
+[
+  {"id": 1, "name": "Trail Backpack", "price": 59.0, "description": "30L, water resistant."},
+  {"id": 2, "name": "Steel Bottle", "price": 18.5, "description": "750 ml, keeps drinks cold."},
+  {"id": 3, "name": "Camp Lantern", "price": 24.0, "description": "Rechargeable LED lantern."},
+  {"id": 4, "name": "Wool Socks", "price": 12.0, "description": "Pack of three."}
+]
