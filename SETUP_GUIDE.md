@@ -51,6 +51,6 @@ Personal overrides go in `.claude/settings.local.json` or `CLAUDE.local.md`. Bot
 
 D-4 end-to-end stub flow works · D-3 real components merged and deployed · D-2 feature freeze · D-2 to D-1 three clean full runs, record video, finalize deck · D-1 README clean-clone test and submission text · D-0 submit at least 3 hours early. Details and the final checklist are in `SUBMISSION_PACK.md` section 9.
 
-## Review flow
+## Merge flow
 
-Author opens a PR, Arslan and Sarah review, then merge. Contract changes use the change-request process in brief section 8.
+Author opens a PR; once CI is green the author merges it. No review approval is required. Contract changes use the change-request process in brief section 8.

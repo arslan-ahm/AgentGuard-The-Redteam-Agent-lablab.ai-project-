@@ -15,7 +15,7 @@ Cross-module or contract changes (PROJECT_BRIEF.md section 8). Never edit anothe
 ## Impact (modules, tests, demo)
 ## Stub/mock used meanwhile
 
-## Approvals (required: owner of affected module + its reviewer; contract/architecture changes: Arslan AND Sarah)
+## Approvals (required: owner of affected module; contract/architecture changes: Arslan AND Sarah)
 - [ ] <name>, <date>
 - [ ] <name>, <date>
 ```
