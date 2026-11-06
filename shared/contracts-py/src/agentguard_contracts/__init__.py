@@ -1,7 +1,7 @@
 """Frozen AgentGuard contracts: PROJECT_BRIEF.md section 5.
 
 Single Python source of truth for the backend and the sandbox worker. Do not change
-anything here without an approved change request (brief section 8, Arslan AND Ayesha).
+anything here without an approved change request (brief section 8, Arslan AND Sarah).
 The TypeScript mirror lives in ``frontend/src/api/contracts.ts`` and must change with it.
 """
 
@@ -285,7 +285,7 @@ SEVERITY_WEIGHTS: Final[dict[Severity, int]] = {
     Severity.LOW: 1,
 }
 """5.10: ``score = max(0, 100 - sum(weight * count))``. The scoring function itself is
-owned by the Verifier + scoring module (Ayesha)."""
+owned by the Verifier + scoring module (Sarah)."""
 
 
 class Recommendation(StrEnum):

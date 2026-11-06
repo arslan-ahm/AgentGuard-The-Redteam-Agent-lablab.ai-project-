@@ -3,7 +3,7 @@
 Owners implement them; the orchestrator (Sohaib) only depends on these protocols, so a
 fake can stand in until the real module lands (brief 6.2: fake planner, fake sandbox).
 
-The Verifier's call signature is not fixed by the brief yet. Ayesha and Sohaib agree on
+The Verifier's call signature is not fixed by the brief yet. Sarah and Sohaib agree on
 it and add it here through a change request.
 """
 
@@ -22,7 +22,7 @@ from agentguard_contracts import (
 
 
 class Planner(Protocol):
-    """Agent planner, brief 6.3. Owner: Ayesha. Lives in ``app/agent/``."""
+    """Agent planner, brief 6.3. Owner: Sarah. Lives in ``app/agent/``."""
 
     async def plan(self, target_url: str, profile: ScanProfile) -> TestPlan:
         """Return a validated plan; fall back to the deterministic plan if the LLM fails."""

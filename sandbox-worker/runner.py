@@ -1,4 +1,4 @@
-"""Sandbox entry point (brief 5.6). Owner: Arslan (Sandbox executor), reviewer: Ayesha.
+"""Sandbox entry point (brief 5.6). Owner: Arslan (Sandbox executor), reviewer: Sarah.
 
 Reads ``/in/task.json``, runs one whitelisted check module with Playwright, writes
 ``/out/result.json``, ``console.json``, ``network_summary.json`` and ``screenshots/``.

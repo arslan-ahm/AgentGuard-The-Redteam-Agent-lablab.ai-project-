@@ -7,7 +7,7 @@ The frozen interfaces are defined in `PROJECT_BRIEF.md` section 5 and implemente
 
 `backend/tests/test_contracts.py` checks the Python models against the brief's own examples.
 
-Change them only through a change request (`docs/change-requests/`), approved by Arslan and Ayesha, and update both files in the same PR. After a change, run `uv sync --reinstall-package agentguard-contracts` in `backend/` and `sandbox-worker/`.
+Change them only through a change request (`docs/change-requests/`), approved by Arslan and Sarah, and update both files in the same PR. After a change, run `uv sync --reinstall-package agentguard-contracts` in `backend/` and `sandbox-worker/`.
 
 Open gaps (the brief doesn't fix these shapes yet; each needs a CR before it's used):
 - Response of `POST /auth/login` (token field name)

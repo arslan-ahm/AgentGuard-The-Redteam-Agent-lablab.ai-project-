@@ -188,7 +188,7 @@ Our project is set up so **Claude knows who you are and what to build**:
 4. Tell it your name. Claude shows your tasks and starts working **only on your part**.
 5. At the end, type **`/handoff`** to save your progress notes.
 
-> ⚡ Shortcut: type **`/start Sarah`** (with your own name) to skip the question.
+> ⚡ Shortcut: type **`/start Ayesha`** (with your own name) to skip the question.
 
 ---
 
@@ -196,12 +196,12 @@ Our project is set up so **Claude knows who you are and what to build**:
 
 | 👤 Person | 🎯 Role | 🧩 Builds |
 |---|---|---|
-| **Sarah** | UI, docs and demo | 🖥️ Web app · 📄 Reports |
+| **Ayesha** | UI, docs and demo | 🖥️ Web app · 📄 Reports |
 | **Sohaib** | Backend | 🔌 API + orchestration · 🧪 QA checks · 🛒 Demo store |
-| **Ayesha** | AI / agent | 🧠 Planner · 🔍 Verifier + scoring |
+| **Sarah** | AI / agent | 🧠 Planner · 🔍 Verifier + scoring |
 | **Arslan** | Infra + security | 📦 Sandbox · 🔐 Security checks · 🛂 Policy + audit · ☁️ Vultr deploy |
 
-> 🔁 **Arslan and Ayesha review every pull request.** Nobody merges their own work.
+> 🔁 **Arslan and Sarah review every pull request.** Nobody merges their own work.
 
 ---
 
@@ -209,11 +209,11 @@ Our project is set up so **Claude knows who you are and what to build**:
 
 ```text
 📁 agentguard
-├── 🖥️ frontend/            Website (React + Tailwind)                → Sarah
+├── 🖥️ frontend/            Website (React + Tailwind)                → Ayesha
 ├── 🧠 backend/
 │   ├── app/api/            API endpoints                             → Sohaib
 │   ├── app/orchestrator/   Runs a scan step by step                  → Sohaib
-│   ├── app/agent/          AI planner + verifier                     → Ayesha
+│   ├── app/agent/          AI planner + verifier                     → Sarah
 │   ├── app/policy/         Safety rules + audit log                  → Arslan
 │   └── app/interfaces.py   How the parts talk to each other          → shared
 ├── 📦 sandbox-worker/      The safety box + robot browser            → Arslan
@@ -238,7 +238,7 @@ flowchart LR
     C --> D["📬 Open PR"]
     D --> E{"🤖 CI checks<br/>all green?"}
     E -- "❌ no" --> B
-    E -- "✅ yes" --> F["👀 Review by<br/>Arslan + Ayesha"]
+    E -- "✅ yes" --> F["👀 Review by<br/>Arslan + Sarah"]
     F -- "changes requested" --> B
     F -- "approved" --> G["🔀 Merge into main"]
 ```
@@ -366,7 +366,7 @@ Another copy is still running. Close the old terminal, or start on another port:
 
 <div align="center">
 
-Built with ❤️ for the **LabLab × Vultr hackathon** by Sarah, Sohaib, Ayesha & Arslan
+Built with ❤️ for the **LabLab × Vultr hackathon** by Ayesha, Sohaib, Sarah & Arslan
 
 ⭐ *Real execution · Verifiable evidence · Containment first* ⭐
 
