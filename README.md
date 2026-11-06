@@ -201,7 +201,7 @@ Our project is set up so **Claude knows who you are and what to build**:
 | **Sarah** | AI / agent | 🧠 Planner · 🔍 Verifier + scoring |
 | **Arslan** | Infra + security | 📦 Sandbox · 🔐 Security checks · 🛂 Policy + audit · ☁️ Vultr deploy |
 
-> 🔁 **Arslan and Sarah review every pull request.** Nobody merges their own work.
+> 🔁 **Every change goes through a branch and a pull request.** Once CI is green, the author merges it. No review approval needed.
 
 ---
 
@@ -229,7 +229,7 @@ Our project is set up so **Claude knows who you are and what to build**:
 ## 🌿 How code gets into `main`
 
 > [!IMPORTANT]
-> 🚫 **Nobody, human or AI agent, commits or pushes to `main`.** Every change goes through a branch and a reviewed pull request, and the automatic checks must pass.
+> 🚫 **Nobody, human or AI agent, commits or pushes to `main`.** Every change goes through a branch and a pull request, and the automatic checks must pass.
 
 ```mermaid
 flowchart LR
@@ -238,9 +238,7 @@ flowchart LR
     C --> D["📬 Open PR"]
     D --> E{"🤖 CI checks<br/>all green?"}
     E -- "❌ no" --> B
-    E -- "✅ yes" --> F["👀 Review by<br/>Arslan + Sarah"]
-    F -- "changes requested" --> B
-    F -- "approved" --> G["🔀 Merge into main"]
+    E -- "✅ yes" --> G["🔀 Merge into main"]
 ```
 
 ```bash
@@ -254,7 +252,6 @@ gh pr create --base main --fill                   # 4. open the PR (or use the G
 
 | Check | Makes sure that… |
 |---|---|
-| 🏷️ PR rules | The branch is named `type/topic` and the title reads like `feat(module): summary` |
 | 🧠 Backend | Tests pass, code style is clean, types are correct, dependencies are locked |
 | 📦 Sandbox worker | Same as the backend |
 | 🖥️ Frontend | Lint, formatting and tests pass, and the site builds with strict TypeScript |
@@ -316,7 +313,7 @@ cd frontend && bun run test && bun run lint && bun run format:check && bun run b
 | **Vultr** | The cloud company that hosts our servers and AI |
 | **Endpoint** | One specific API address, e.g. `/api/v1/scans` |
 | **Finding** | One problem AgentGuard found, with proof |
-| **Pull request (PR)** | A request to add your changes to the main code, reviewed by teammates |
+| **Pull request (PR)** | A request to add your changes to the main code, merged once the automatic checks pass |
 | **`.env` file** | A private settings file with passwords. Never shared |
 | **uv / Bun** | Tools that install and run Python / JavaScript projects |
 

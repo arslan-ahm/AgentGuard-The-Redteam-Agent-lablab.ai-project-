@@ -23,4 +23,4 @@ Owner:
 - [ ] Audit events emitted where required
 - [ ] Short doc added (module README or ARCHITECTURE.md / docs/)
 - [ ] No containment, policy or approval control weakened
-- [ ] Reviewer(s) from the brief section 2 table assigned; author does not merge
+- [ ] CI is green before merging
