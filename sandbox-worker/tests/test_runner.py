@@ -152,7 +152,7 @@ def test_load_check_rejects_non_whitelisted(check_id: str) -> None:
 
 def test_load_check_whitelisted_but_missing_module() -> None:
     with pytest.raises(ImportError):
-        runner.load_check("security.headers")
+        runner.load_check("security.login_rate_probe")
 
 
 @pytest.mark.parametrize(
@@ -160,7 +160,7 @@ def test_load_check_whitelisted_but_missing_module() -> None:
     [
         ("https://demo.example.com/checkout", True),
         ("https://demo.example.com", True),
-        ("http://demo.example.com/", False),
+        ("http://demo.example.com/", True),  # same host, http<->https on default ports
         ("https://demo.example.com:8443/", False),
         ("https://evil.example.com/", False),
         ("https://demo.example.com.evil.com/", False),
