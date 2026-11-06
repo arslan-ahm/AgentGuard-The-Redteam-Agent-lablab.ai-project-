@@ -12,14 +12,15 @@ Containment flags (all built by :func:`build_docker_run_args`, every one asserte
 - mounts: only the task dir at ``/in`` (read-only) and the evidence dir at ``/out``. Never the
   Docker socket and never any other host path (enforced by :func:`_assert_safe_mount`)
 - a dedicated network whose host firewall rules drop traffic to private, loopback,
-  link-local and metadata ranges (``scripts/sandbox-egress.sh``); target hosts can be pinned
-  to policy-approved IPs with ``--add-host`` so DNS rebinding inside the container can't win
+  link-local and metadata ranges (``scripts/sandbox-egress.sh``); the target host is pinned
+  to the policy-approved IPs with ``--add-host`` so DNS rebinding inside the container can't win
 - a hard wall-clock limit: past it the container is killed
 """
 
 from __future__ import annotations
 
 import asyncio
+import ipaddress
 import json
 import os
 import re
@@ -216,9 +217,10 @@ class DockerSandboxRunner:
     async def run(self, task: SandboxTaskInput) -> SandboxResult:
         """Launch, wait, collect ``result.json`` and always destroy the container."""
         name = container_name(task)
+        pinned: dict[str, list[str]] = {}
         if self.policy is not None:
             try:
-                await self.policy.assert_allowed(task.target_url)
+                pinned = await _check_and_pin(self.policy, task.target_url)
             except Exception as exc:  # any policy failure refuses the launch
                 reason = getattr(exc, "reason", None) or type(exc).__name__
                 await self._audit(task, AuditActor.POLICY, "launch", task.target_url, False, reason)
@@ -233,6 +235,7 @@ class DockerSandboxRunner:
             out_dir=out_dir,
             limits=self.limits,
             network=self.network,
+            pinned_hosts=pinned,
             labels={"agentguard.scan_id": str(task.scan_id), "agentguard.task_id": name},
         )
         wall_s = min(task.task.timeout_s + BROWSER_STARTUP_GRACE_S, self.limits.max_wall_s)
@@ -296,6 +299,30 @@ class DockerSandboxRunner:
                 reason=reason[:500],
             )
         )
+
+
+async def _check_and_pin(policy: UrlPolicy, url: str) -> dict[str, list[str]]:
+    """Run the URL policy; return ``{host: [approved IPs]}`` to pin with ``--add-host``.
+
+    Pinning means the container resolves the target to the addresses the policy just checked,
+    so a DNS answer that flips to a private IP later (rebinding) is never used. Policies
+    without ``resolve_allowed`` (plain ``UrlPolicy``) are still enforced, just not pinned.
+    """
+    resolve_allowed = getattr(policy, "resolve_allowed", None)
+    if resolve_allowed is None:
+        await policy.assert_allowed(url)
+        return {}
+    target = await resolve_allowed(url)
+    host = str(getattr(target, "host", ""))
+    addresses = [str(a) for a in getattr(target, "addresses", ())]
+    try:
+        ipaddress.ip_address(host.strip("[]"))
+        return {}  # an IP literal needs no pinning
+    except ValueError:
+        pass
+    if not host or not addresses:
+        raise ValueError("policy approved the URL but returned no addresses to pin")
+    return {host: addresses}
 
 
 def _prepare_dirs(in_dir: Path, out_dir: Path, task: SandboxTaskInput) -> None:

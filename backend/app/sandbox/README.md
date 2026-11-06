@@ -41,10 +41,26 @@ Audit events (`actor`, `action`, `decision`): `sandbox launched/allowed`, `polic
 | No privileges | `--cap-drop=ALL`, `--security-opt=no-new-privileges`, non-root image user |
 | Resource limits | `--cpus`, `--memory` = `--memory-swap`, `--pids-limit 256`, `--ulimit nofile` |
 | Mounts | only `/in` (read-only) and `/out`; `/`, system dirs and any `docker.sock` are refused |
-| Network | dedicated `agentguard-sandbox` network (never `host`/`bridge`/`container:`). **Pending:** the host firewall rules that drop private, loopback, link-local and metadata ranges for that network (`scripts/sandbox-egress.sh`, next sandbox branch). Until then the in-sandbox same-origin policy is the only egress guard |
-| DNS rebinding | `build_docker_run_args(pinned_hosts=...)` emits `--add-host host:ip`. **Not wired into `run()` yet:** it needs `ResolvedTarget` from the policy branch (`feat/policy-url-validator`) |
+| Network | dedicated `agentguard-sandbox` network (never `host`/`bridge`/`container:`), firewalled by `scripts/sandbox-egress.sh` (below) |
+| DNS rebinding | the policy's `resolve_allowed` result is pinned with `--add-host host:ip`, so the container never re-resolves the target. A policy without `resolve_allowed` is enforced but not pinned |
 | Untrusted output | after exit, symlinks, FIFOs and devices in `out/` are deleted, never followed; `result.json` over 5 MiB is not read |
 | Secrets | none in argv or env; only `HOME`, `AGENTGUARD_IN`, `AGENTGUARD_OUT` |
+
+## Egress firewall (`scripts/sandbox-egress.sh`)
+
+On the Docker host, once: `sudo bash scripts/sandbox-egress.sh apply`, plus `scripts/agentguard-egress.service` so it comes back after a reboot. It creates the `agentguard-sandbox` network (no IPv6, no container-to-container traffic) and iptables rules for its bridge:
+
+| Traffic from a sandbox to | Result |
+|---|---|
+| loopback, RFC1918, CGNAT, link-local / `169.254.169.254`, reserved, multicast | dropped |
+| the host itself (gateway, public IP, published ports) | dropped |
+| the host's upstream DNS servers, port 53 only | allowed |
+| any other public address over TCP | allowed |
+| UDP, ICMP, anything else | dropped |
+
+Inside the container, `sandbox-worker/checks/netguard.py` vets every browser request and redirect hop before it leaves, so this firewall is the second layer, not the only one.
+
+`--dry-run` prints the commands without root; `sandbox-worker/tests/test_egress_script.py` checks rule order and coverage that way. **Not yet run on a real Linux host:** verify with `status` after the first deploy.
 
 ## Deployment note
 

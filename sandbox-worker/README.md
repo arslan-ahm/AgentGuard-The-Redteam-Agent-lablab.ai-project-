@@ -39,6 +39,18 @@ Test checks with a fake page and a fake `ctx` (see `tests/test_runner.py`). Unit
 
 `params.path` (same-origin path only) picks the page; `params.probe_marker` sets the marked probe value (default `agentguard-probe-<random>`). Evidence never includes `Set-Cookie`, `Authorization` or other non-whitelisted headers (`checks/security/_common.py:EVIDENCE_HEADERS`).
 
+## Network guard (Arslan)
+
+`checks/netguard.py` is installed on every page by `runner.py` (`page.route("**/*")` + `page.route_web_socket`), in a browser context with service workers blocked. For **every** request it:
+
+1. blocks before anything is sent: non-http(s) schemes, credentials in URLs, internal hostnames (`localhost`, `*.internal`, `host.docker.internal`, metadata names), private/loopback/link-local/metadata IPs, literal or after DNS (once per host per task);
+2. follows redirects itself with `max_redirects=0`, checking each hop before requesting it. Chromium follows navigation redirects without calling `page.route` again (measured: `continue_()` let `302 -> 127.0.0.2/internal` through), so the guard never hands a 3xx back to the browser;
+3. allows top-level navigations only within the target origin.
+
+A blocked navigation is a `navigate`/`blocked` event: the task becomes `blocked`, exit 3, sandbox destroyed. A blocked subresource (an `<img>`, script or WebSocket pointing inside) is aborted and recorded as `subresource_blocked`. The request never left, so the task carries on.
+
+The real-browser test is opt-in: `AGENTGUARD_LIVE_BROWSER=1 uv run pytest tests/test_netguard.py -k live` (needs `uv run playwright install chromium --only-shell`).
+
 ## Policy placeholder
 
 `checks/context.py:SameOriginPolicy` allows only the target's own host and port. The one exception is switching between http and https on the same host when both use default ports, which `security.https_redirect` needs. It is a strict placeholder. Arslan replaces it with the full policy (DNS resolution, private/loopback/link-local/metadata blocking). The real boundary is the container's network egress rules, enforced by the launcher.

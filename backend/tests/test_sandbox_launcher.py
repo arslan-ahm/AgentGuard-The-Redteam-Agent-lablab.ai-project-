@@ -542,3 +542,88 @@ async def test_oversized_result_is_not_read(tmp_path: Path) -> None:
     result = await runner.run(make_task())
     assert result.status.value == "error"
     assert "ValueError" in result.policy_events[0]["reason"]
+
+
+# --- DNS pinning (--add-host) ---------------------------------------------------------
+
+
+class PinningPolicy:
+    """Like app.policy.url_policy.UrlValidator: resolve_allowed returns approved IPs."""
+
+    def __init__(self, host: str, addresses: tuple[str, ...]) -> None:
+        self.host = host
+        self.addresses = addresses
+
+    async def assert_allowed(self, url: str) -> None:
+        raise AssertionError("resolve_allowed must be preferred when available")
+
+    async def resolve_allowed(self, url: str) -> Any:
+        from types import SimpleNamespace
+
+        return SimpleNamespace(host=self.host, addresses=self.addresses)
+
+
+def _make(tmp_path: Path, policy: Any) -> tuple[DockerSandboxRunner, FakeCommands]:
+    commands = FakeCommands()
+    runner = DockerSandboxRunner(
+        image="agentguard-sandbox:test",
+        work_root=tmp_path / "work",
+        policy=policy,
+        commands=commands,
+    )
+    return runner, commands
+
+
+def _add_hosts(commands: FakeCommands) -> list[str]:
+    args = commands.run_calls[0]
+    return [args[i + 1] for i, a in enumerate(args) if a == "--add-host"]
+
+
+async def test_target_pinned_to_approved_addresses(tmp_path: Path) -> None:
+    policy = PinningPolicy("demo.example.com", ("93.184.215.14", "2606:2800::1"))
+    runner, commands = _make(tmp_path, policy)
+    await runner.run(make_task())
+    assert _add_hosts(commands) == [
+        "demo.example.com:93.184.215.14",
+        "demo.example.com:2606:2800::1",
+    ]
+
+
+async def test_ip_literal_target_not_pinned(tmp_path: Path) -> None:
+    runner, commands = _make(tmp_path, PinningPolicy("93.184.215.14", ("93.184.215.14",)))
+    await runner.run(make_task())
+    assert _add_hosts(commands) == []
+
+
+async def test_policy_without_addresses_refuses_launch(tmp_path: Path) -> None:
+    runner, commands = _make(tmp_path, PinningPolicy("demo.example.com", ()))
+    result = await runner.run(make_task())
+    assert result.status.value == "blocked"
+    assert commands.calls == []
+
+
+async def test_plain_url_policy_enforced_but_not_pinned(tmp_path: Path) -> None:
+    runner, commands = _make(tmp_path, FakePolicy())
+    await runner.run(make_task())
+    assert _add_hosts(commands) == []
+
+
+async def test_real_url_validator_pins_and_blocks(tmp_path: Path) -> None:
+    from app.policy.url_policy import UrlValidator
+
+    class Dns:
+        def __init__(self, answers: list[str]) -> None:
+            self.answers = answers
+
+        async def resolve(self, host: str, port: int) -> list[str]:
+            return self.answers
+
+    runner, commands = _make(tmp_path, UrlValidator(Dns(["93.184.215.14"])))
+    await runner.run(make_task())
+    assert _add_hosts(commands) == ["demo.example.com:93.184.215.14"]
+
+    rebound, commands2 = _make(tmp_path / "2", UrlValidator(Dns(["169.254.169.254"])))
+    result = await rebound.run(make_task())
+    assert result.status.value == "blocked"
+    assert commands2.calls == []  # never launched
+    assert result.policy_events[0]["reason"] == "cloud metadata address"
