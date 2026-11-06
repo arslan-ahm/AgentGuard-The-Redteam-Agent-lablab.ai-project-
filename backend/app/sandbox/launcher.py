@@ -46,6 +46,7 @@ from pydantic import ValidationError
 
 from app.config import Settings
 from app.interfaces import AuditSink, UrlPolicy
+from app.policy.redaction import redact, redact_text
 
 DEFAULT_NETWORK = "agentguard-sandbox"
 BROWSER_STARTUP_GRACE_S = 30
@@ -361,6 +362,7 @@ def _read_result(out_dir: Path, task: SandboxTaskInput, code: int, stderr: str) 
     removed = sanitize_out_dir(out_dir)
     if removed:
         print(f"sandbox out/: removed non-regular entries {removed[:20]}", file=sys.stderr)
+    redact_evidence_files(out_dir)
     path = out_dir / "result.json"
     try:
         if path.stat().st_size > MAX_RESULT_BYTES:
@@ -371,6 +373,7 @@ def _read_result(out_dir: Path, task: SandboxTaskInput, code: int, stderr: str) 
         return _synthetic(task, SandboxResultStatus.ERROR, "result_missing", detail)
     if result.task_id != task.task.task_id:
         return _synthetic(task, SandboxResultStatus.ERROR, "result_mismatch", "wrong task_id")
+    result = _redact_result(result)
     if (
         code == SandboxExitCode.POLICY_VIOLATION
         and result.status is not SandboxResultStatus.BLOCKED
@@ -382,6 +385,51 @@ def _read_result(out_dir: Path, task: SandboxTaskInput, code: int, stderr: str) 
     ):
         return result.model_copy(update={"status": SandboxResultStatus.ERROR})
     return result
+
+
+REDACTED_EVIDENCE_FILES = ("network_summary.json", "console.json")
+
+
+def redact_evidence_files(out_dir: Path) -> list[str]:
+    """Rewrite the sandbox's JSON evidence with secrets redacted (brief 6.9).
+
+    The sandbox is untrusted and pages can echo tokens, cookies or passwords into console
+    logs and responses. Anything unreadable is replaced with an empty list rather than kept
+    unredacted. Returns the files that were rewritten.
+    """
+    rewritten: list[str] = []
+    for name in REDACTED_EVIDENCE_FILES:
+        path = out_dir / name
+        if not path.is_file() or path.is_symlink():
+            continue
+        try:
+            if path.stat().st_size > MAX_RESULT_BYTES:
+                raise ValueError("evidence file too large")
+            data = json.loads(path.read_text(encoding="utf-8"))
+            clean = redact(data)
+        except (OSError, ValueError):
+            clean = []
+        path.write_text(json.dumps(clean, indent=2), encoding="utf-8")
+        rewritten.append(name)
+    return rewritten
+
+
+def _redact_result(result: SandboxResult) -> SandboxResult:
+    """Redact the free-text parts of a sandbox result before anything stores or shows it."""
+    findings = [
+        f.model_copy(
+            update={
+                "title": redact_text(f.title),
+                "url": redact_text(f.url),
+                "reproduction": [redact_text(step) for step in f.reproduction],
+                "impact": redact_text(f.impact),
+            }
+        )
+        for f in result.findings
+    ]
+    return result.model_copy(
+        update={"findings": findings, "policy_events": redact(result.policy_events)}
+    )
 
 
 def _synthetic(
