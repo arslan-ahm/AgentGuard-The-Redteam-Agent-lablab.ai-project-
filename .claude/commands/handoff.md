@@ -15,4 +15,6 @@ Blockers / needs from others: ...
 Next 3 tasks: ...
 ```
 
+Before writing it, update this person's rows in the README task board (between `STATUS-BOARD:START` and `STATUS-BOARD:END`) and recount their summary row, following the "Task board" rules in CLAUDE.md. Mention the board change in the note.
+
 Fill it from what actually happened in this session. Tests must show commands that were really run and their real results. Say plainly if something wasn't run. Save it to `docs/handoff/<name>-<YYYY-MM-DD>.md` (lowercase name, append `-2`, `-3` if the file exists) and print it.

@@ -96,18 +96,103 @@ Full details and how each control is tested: [docs/containment-policy.md](docs/c
 ## 🚦 Project status
 
 > [!NOTE]
-> We're early in the hackathon. **The foundation is built; the features are being added now.** This table is kept honest.
+> **Live task board.** Each person (and their Claude) updates their own rows in the same PR as the work: ✅ when merged to `main`, 🟡 when started or partly done, ⏳ when not started yet, ⛔ when blocked (say on what). Keep it honest: ✅ only for work that's merged and tested.
 
-| Part | Status |
-|---|---|
-| 🏗️ Project structure, Docker setup, shared data formats | ✅ Done |
-| 🔌 API endpoints (the doors exist; they answer "not built yet") | 🟡 Skeleton |
-| 📦 Sandbox runner (runs one test safely and reports back) | 🟡 Skeleton + tests |
-| 🖥️ Web app screens | ⏳ To do |
-| 🧠 AI planner and verifier | ⏳ To do |
-| 🧪 QA checks and 🔐 security checks | ⏳ To do |
-| 🛒 Flawed demo store (a practice target) | ⏳ To do |
-| ☁️ Live demo on Vultr | ⏳ To do |
+<!-- STATUS-BOARD:START (Claude: update only the rows of the person you are working for) -->
+
+**Legend:** ✅ done (merged) · 🟡 in progress · ⏳ to do · ⛔ blocked
+
+| | ✅ | 🟡 | ⏳ | ⛔ |
+|---|:-:|:-:|:-:|:-:|
+| 🖥️ **Ayesha** | 0 | 0 | 10 | 0 |
+| 🔌 **Sohaib** | 0 | 1 | 11 | 0 |
+| 🧠 **Sarah** | 0 | 0 | 11 | 0 |
+| 🛡️ **Arslan** | 12 | 1 | 0 | 3 |
+
+**Shared foundation:** ✅ project structure, Docker setup, CI, shared data formats (`shared/contracts-py`, `frontend/src/api/contracts.ts`).
+
+<details open>
+<summary>🖥️ <b>Ayesha</b>: Web app / UI · Report + remediation · media lead</summary>
+
+| Task | Status |
+|---|:-:|
+| 🧭 App scaffold, routes, API client + mock data | ⏳ |
+| 🔐 Login page | ⏳ |
+| 📊 Dashboard (scan list + scores) and new-scan form (URL, profile, authorization checkbox) | ⏳ |
+| 📡 Live progress view (SSE): planning → sandbox → tests → **red "Blocked by policy"** + sandbox destroyed | ⏳ |
+| 🧾 Findings list, severity badges, evidence viewer (screenshot, network summary, repro) | ⏳ |
+| ✋ Approval dialog (GitHub issue / send report) | ⏳ |
+| 📄 Report page, Markdown + PDF export, decision banner | ⏳ |
+| 🐙 GitHub issue body template | ⏳ |
+| 🎬 Media: deck design (12 slides), video lead + edit, screenshots, logo | ⏳ |
+| 📘 Media: final README pass from a clean clone, submission text | ⏳ |
+
+</details>
+
+<details open>
+<summary>🔌 <b>Sohaib</b>: API + orchestration · QA checks · demo store</summary>
+
+| Task | Status |
+|---|:-:|
+| 🗄️ DB models + migrations | ⏳ |
+| 🔑 Auth (`POST /auth/login`) | ⏳ |
+| 🔌 Scan endpoints (`POST/GET /scans`, findings, evidence, report, audit) | 🟡 skeleton |
+| ⚙️ Queue + orchestrator state machine (planner → sandbox → verifier → score) | ⏳ |
+| 🔗 Wire Arslan's pieces: `UrlValidator`, `ScanRateLimiter`, `HashChainedAuditLog`, `DockerSandboxRunner(work_root=AGENTGUARD_WORK_ROOT)` | ⏳ |
+| 🧯 Trigger for the containment demo task (`security.exposed_endpoints`, `containment_demo: true`) | ⏳ |
+| 📡 SSE progress + audit events, approvals endpoint | ⏳ |
+| 🧪 QA checks: pages_load, console_network_errors, links_assets, forms | ⏳ |
+| 🧪 QA checks: login, password_reset, search, checkout, accessibility | ⏳ |
+| 🛒 Flawed demo store (`scripts/demo-store/`) | ⏳ |
+| 📝 Media: API overview + curl examples (README), slide 10 data | ⏳ |
+| 🗣️ Media: video segment | ⏳ |
+
+</details>
+
+<details open>
+<summary>🧠 <b>Sarah</b>: Agent planner · Verifier + scoring</summary>
+
+| Task | Status |
+|---|:-:|
+| 📐 Plan schema + validator (whitelisted check ids, task caps per profile) | ⏳ |
+| 🛟 Deterministic fallback plan per profile | ⏳ |
+| ☁️ Vultr Serverless Inference client (timeout, retries, repair prompt) | ⏳ |
+| 🛡️ Prompt-injection defense (page text as untrusted data, redacted + truncated) | ⏳ |
+| 📝 `summarize(findings)` executive summary | ⏳ |
+| 🔍 Verifier: re-check, dedupe, confidence, "needs manual review" bucket | ⏳ |
+| 🧮 Scoring + release recommendation (pure functions + tests) | ⏳ |
+| 📈 False-positive eval (results table) | ⏳ |
+| 🤖 Media: AI section of README, slides 5 + 9 | ⏳ |
+| 🗣️ Media: Q&A prep (AI answers, merged with Arslan's) | ⏳ |
+| 🎙️ Media: video segment 1:55–2:30 | ⏳ |
+
+</details>
+
+<details open>
+<summary>🛡️ <b>Arslan</b>: Sandbox executor · Security checks · Policy + audit · Vultr deployment</summary>
+
+| Task | Status |
+|---|:-:|
+| 📦 Sandbox image + runner (non-root, exit codes, `result.json`) | ✅ |
+| 🚀 Sandbox launcher (limits, read-only, cap-drop, always destroyed) | ✅ |
+| 🌐 In-browser network guard, DNS pinning, egress firewall script | ✅ |
+| 🛂 URL policy (DNS, private/metadata IPs, redirects) | ✅ |
+| 🧽 Secret redaction, 🔗 hash-chained audit log, 🚦 rate limits | 🟡 PR open (`feat/policy-audit-redaction`) |
+| 🔐 Security checks: headers, cookies, https_redirect, error_leak | ✅ |
+| 🔐 Security checks: url_session_leak, open_redirect, reflected_input, exposed_endpoints, login_rate_probe | ✅ |
+| 🧯 Containment demo trigger | ✅ |
+| 🐳 Compose deployment: worker Docker proxy, env template, backup + health scripts, runbook | ✅ |
+| 🗺️ Media #3: architecture diagram | ✅ |
+| 📜 Media #4: SECURITY.md + containment policy | ✅ |
+| ☁️ Media #5: Vultr write-up (README) | ✅ |
+| 🗣️ Media #14 + slides 6–8 + video script: Q&A, slide content, 2:30–3:05 script | ✅ |
+| ☁️ Create the Vultr VM + deploy the live demo | ⛔ needs a VM |
+| ⏱️ Media #6: uptime monitoring + fill in region / size / model | ⛔ needs the live demo |
+| 🎥 Record video segment 2:30–3:05 | ⛔ needs the live demo + UI |
+
+</details>
+
+<!-- STATUS-BOARD:END -->
 
 ---
 

@@ -10,3 +10,4 @@ This is the AgentGuard team repo. Before doing anything else in this session:
 5. Work only on that person's modules. Other modules are read-only; use the change-request process in docs/change-requests/ for anything else.
 6. Never commit or push to main. Before coding: git config core.hooksPath .githooks, then work on a feat/<module>-<topic> branch, push it, and open a PR (see "Git workflow" in CLAUDE.md). Never merge your own PR.
 7. End the session with a handoff note saved to docs/handoff/<name>-<date>.md (brief section 9). The /handoff command does this.
+8. Keep that person's rows in the README task board (STATUS-BOARD markers) current in the same PR as the work: ✅ merged and tested, 🟡 in progress / PR open, ⏳ to do, ⛔ blocked. Recount their summary row. Never edit other people's rows. Rules: "Task board" in CLAUDE.md.
