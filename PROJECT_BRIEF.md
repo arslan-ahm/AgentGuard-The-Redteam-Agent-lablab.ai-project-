@@ -64,7 +64,7 @@ Hackathon: LabLab. Submission needs public GitHub repo, Vultr-hosted public demo
 | Policy + audit | Arslan |
 | Vultr deployment | Arslan |
 
-**Team rules:** Every change goes through a branch and a PR with green CI; no review approval is required. Ayesha owns UI, reports, documentation and demo assets. Sohaib owns backend, orchestration and QA checks. Keep features small, test the full scan flow repeatedly, freeze new features before recording the video.
+**Team rules:** Every change goes through a branch and a PR, with the area's checks run locally first; no review approval is required. Ayesha owns UI, reports, documentation and demo assets. Sohaib owns backend, orchestration and QA checks. Keep features small, test the full scan flow repeatedly, freeze new features before recording the video.
 
 ---
 
@@ -317,7 +317,7 @@ First tasks: compose file, VM provisioning notes, HTTPS + health checks.
 - [ ] Errors handled; timeouts everywhere network is used.
 - [ ] Audit events emitted where required.
 - [ ] Short doc added (module README or section in ARCHITECTURE.md / docs/).
-- [ ] PR opened with checklist; CI green.
+- [ ] PR opened with checklist; local checks green.
 
 ## 8. Cross-module change protocol
 If your work needs a change in another module or to a section 5 contract:
@@ -350,7 +350,7 @@ Save it to `docs/handoff/<name>-<date>.md` and print it.
 - **Naming:** `snake_case` Python, `camelCase` TS variables, `PascalCase` components/types, check ids `category.name`.
 
 ## 11. Workflow rules
-- `main` is protected: changes land only through a PR with green CI. No review approval is required; the author merges once CI passes.
+- `main` is protected: changes land only through a PR. No review approval is required; the author merges once their local checks pass.
 - Commit early and often; push at least every 2 hours.
 - PR template: what changed, how tested, contract impact (yes/no), screenshots if UI.
 - Integration order: stubs first -> real planner -> real sandbox -> real checks -> verifier -> report -> deploy. Run the full scan flow against the demo store after each merge.

@@ -109,7 +109,7 @@ Full details and how each control is tested: [docs/containment-policy.md](docs/c
 | 🧠 **Sarah** | 0 | 0 | 11 | 0 |
 | 🛡️ **Arslan** | 12 | 1 | 0 | 3 |
 
-**Shared foundation:** ✅ project structure, Docker setup, CI, shared data formats (`shared/contracts-py`, `frontend/src/api/contracts.ts`).
+**Shared foundation:** ✅ project structure, Docker setup, shared data formats (`shared/contracts-py`, `frontend/src/api/contracts.ts`).
 
 <details open>
 <summary>🖥️ <b>Ayesha</b>: Web app / UI · Report + remediation · media lead</summary>
@@ -297,7 +297,7 @@ Our project is set up so **Claude knows who you are and what to build**:
 | **Sarah** | AI / agent | 🧠 Planner · 🔍 Verifier + scoring |
 | **Arslan** | Infra + security | 📦 Sandbox · 🔐 Security checks · 🛂 Policy + audit · ☁️ Vultr deploy |
 
-> 🔁 **Every change goes through a branch and a pull request.** Once CI is green, the author merges it. No review approval needed.
+> 🔁 **Every change goes through a branch and a pull request.** Run your checks locally, then the author merges it. No review approval needed.
 
 ---
 
@@ -325,16 +325,16 @@ Our project is set up so **Claude knows who you are and what to build**:
 ## 🌿 How code gets into `main`
 
 > [!IMPORTANT]
-> 🚫 **Nobody, human or AI agent, commits or pushes to `main`.** Every change goes through a branch and a pull request, and the automatic checks must pass.
+> 🚫 **Nobody, human or AI agent, commits or pushes to `main`.** Every change goes through a branch and a pull request, and your local checks must pass first.
 
 ```mermaid
 flowchart LR
     A["🌿 Branch<br/>feat/sandbox-limits"] --> B["💻 Code + commit"]
-    B --> C["⬆️ Push branch"]
-    C --> D["📬 Open PR"]
-    D --> E{"🤖 CI checks<br/>all green?"}
+    B --> E{"✅ Local checks<br/>all green?"}
     E -- "❌ no" --> B
-    E -- "✅ yes" --> G["🔀 Merge into main"]
+    E -- "✅ yes" --> C["⬆️ Push branch"]
+    C --> D["📬 Open PR"]
+    D --> G["🔀 Merge into main"]
 ```
 
 ```bash
@@ -344,20 +344,9 @@ git push -u origin feat/<module>-<topic>          # 3. push the branch
 gh pr create --base main --fill                   # 4. open the PR (or use the GitHub website)
 ```
 
-### 🤖 What CI checks on every PR
-
-| Check | Makes sure that… |
-|---|---|
-| 🧠 Backend | Tests pass, code style is clean, types are correct, dependencies are locked |
-| 📦 Sandbox worker | Same as the backend |
-| 🖥️ Frontend | Lint, formatting and tests pass, and the site builds with strict TypeScript |
-| 🐳 Docker | The compose file is valid and **every image actually builds** |
-| 🔑 Secret scan | No passwords or API keys were committed (whole history) |
-| ✅ **CI passed** | All of the above. GitHub won't allow a merge without it |
-
 ## ✅ Before you open a pull request
 
-Run the checks for the part you changed so CI passes the first time. All must pass ✔️
+There is no GitHub CI: run the checks for the part you changed and paste the result into the PR. All must pass ✔️
 
 ```bash
 # 🧠 backend

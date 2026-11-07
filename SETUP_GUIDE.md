@@ -53,4 +53,4 @@ D-4 end-to-end stub flow works · D-3 real components merged and deployed · D-2
 
 ## Merge flow
 
-Author opens a PR; once CI is green the author merges it. No review approval is required. Contract changes use the change-request process in brief section 8.
+Author runs their area's checks locally, opens a PR, then merges it. No review approval is required. Contract changes use the change-request process in brief section 8.

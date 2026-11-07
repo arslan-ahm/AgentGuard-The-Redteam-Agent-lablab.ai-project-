@@ -114,7 +114,7 @@ The worker launches sandboxes with the `docker` CLI through `docker-proxy` (`tec
 
 The sandbox containers have no Docker access at all.
 
-**Residual risk.** The container API can still create a privileged container, so the worker must only ever run our code. Never mount the socket elsewhere, never publish the proxy, never point `DOCKER_HOST` at it from another service. `backend/tests/test_deploy_config.py` fails CI if any of these change.
+**Residual risk.** The container API can still create a privileged container, so the worker must only ever run our code. Never mount the socket elsewhere, never publish the proxy, never point `DOCKER_HOST` at it from another service. `backend/tests/test_deploy_config.py` fails the backend tests if any of these change.
 
 ## 7. Backups
 
