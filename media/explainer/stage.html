@@ -1,0 +1,594 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>AgentGuard explainer stage</title>
+<style>
+  @font-face { font-family: "Nunito"; src: url("assets/Nunito.ttf") format("truetype"); font-weight: 200 1000; }
+  html, body { margin: 0; background: #fff; overflow: hidden; }
+  svg { display: block; }
+  text { font-family: "Nunito", "Segoe UI", sans-serif; }
+</style>
+</head>
+<body>
+<svg id="stage" width="1920" height="1080" viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg"></svg>
+<script>
+/*
+ * Deterministic stage: window.setup(timeline) once (returns a promise: fonts loaded), then
+ * window.renderAt(seconds) per frame. Everything is a pure function of time.
+ * Words and timing come from script.json via the timeline; this file holds the student
+ * character, the props and each scene's choreography (keyed by narration line).
+ */
+const C = {
+  bg: "#ffffff", floor: "#f5f7fa", line: "#e3e8ef", ink: "#1f2937", mut: "#64748b", soft: "#94a3b8",
+  orange: "#f59e0b", orangeL: "#ffedc7", blue: "#2563eb", blueL: "#dbeafe", green: "#16a34a", greenL: "#dcfce7",
+  red: "#e5484d", redL: "#fee2e2", sky: "#0ea5e9", skyL: "#e0f2fe", pink: "#fbb6ce", mouth: "#5b1d24", yellow: "#facc15",
+};
+const GROUND = 880;
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const lerp = (a, b, t) => a + (b - a) * t;
+const easeOut = t => 1 - Math.pow(1 - clamp(t), 3);
+const easeIn = t => Math.pow(clamp(t), 3);
+const easeInOut = t => { t = clamp(t); return t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; };
+const backOut = t => { t = clamp(t); const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2); };
+const win = (t, a, d) => clamp((t - a) / d);
+const esc = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+const R = Math.PI / 180;
+const rnd = i => { const x = Math.sin(i * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
+let ICONS = {};
+
+// ------------------------------------------------------------------ drawing helpers
+
+function icon(name, cx, cy, size, color, sw = 2) {
+  const inner = ICONS[name] || "";
+  return `<g transform="translate(${cx - size / 2},${cy - size / 2}) scale(${size / 24})" fill="none" stroke="${color}" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round">${inner}</g>`;
+}
+function card(x, y, w, h, o = {}) {
+  const r = o.r ?? 26, sw = o.sw ?? 4;
+  return `<rect x="${x}" y="${y + 9}" width="${w}" height="${h}" rx="${r}" fill="${o.shadow ?? "#e9edf3"}"/>` +
+    `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${r}" fill="${o.fill ?? "#fff"}" stroke="${o.stroke ?? C.ink}" stroke-width="${sw}" ${o.dash ? `stroke-dasharray="${o.dash}"` : ""}/>`;
+}
+function txt(x, y, s, size, fill = C.ink, o = {}) {
+  return `<text x="${x}" y="${y}" font-size="${size}" fill="${fill}" font-weight="${o.w ?? 800}" text-anchor="${o.a ?? "start"}" ${o.op != null ? `opacity="${o.op}"` : ""}>${esc(s)}</text>`;
+}
+function pill(x, y, w, h, fill, stroke = C.ink) {
+  return `<rect x="${x}" y="${y + 6}" width="${w}" height="${h}" rx="${h / 2}" fill="#e9edf3"/><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${h / 2}" fill="${fill}" stroke="${stroke}" stroke-width="4"/>`;
+}
+function pop(cx, cy, k, inner) {
+  if (k <= 0) return "";
+  const s = lerp(.5, 1, backOut(k));
+  return `<g opacity="${clamp(k * 2.5)}" transform="translate(${cx},${cy}) scale(${s}) translate(${-cx},${-cy})">${inner}</g>`;
+}
+function slide(dx, dy, k, inner) {
+  if (k <= 0) return "";
+  const e = easeOut(k);
+  return `<g opacity="${clamp(k * 2)}" transform="translate(${dx * (1 - e)},${dy * (1 - e)})">${inner}</g>`;
+}
+function fadeOut(k, inner) { return k >= 1 ? "" : `<g opacity="${1 - easeInOut(k)}">${inner}</g>`; }
+function sceneTitle(label, ic, color, k) {
+  if (k <= 0) return "";
+  const w = 110 + label.length * 22.5;
+  return slide(-40, 0, k, pill(70, 60, w, 76, "#fff") + `<circle cx="113" cy="98" r="24" fill="${color}"/>` + icon(ic, 113, 98, 30, "#fff", 2.4) + txt(150, 112, label, 38, C.ink, { w: 900 }));
+}
+function star(cx, cy, r, fill) {
+  return `<path d="M${cx},${cy - r} Q${cx + r * .18},${cy - r * .18} ${cx + r},${cy} Q${cx + r * .18},${cy + r * .18} ${cx},${cy + r} Q${cx - r * .18},${cy + r * .18} ${cx - r},${cy} Q${cx - r * .18},${cy - r * .18} ${cx},${cy - r} Z" fill="${fill}"/>`;
+}
+function checkMark(cx, cy, size, k, color = C.green) {
+  if (k <= 0) return "";
+  const len = 60, d = len * (1 - easeOut(k));
+  return `<circle cx="${cx}" cy="${cy}" r="${size}" fill="${color}" opacity="${clamp(k * 3)}"/>` +
+    `<path d="M${cx - size * .45},${cy} L${cx - size * .1},${cy + size * .35} L${cx + size * .5},${cy - size * .35}" fill="none" stroke="#fff" stroke-width="${size * .22}" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="${len}" stroke-dashoffset="${d}" pathLength="${len}"/>`;
+}
+
+// ------------------------------------------------------------------ the student
+
+const POSES = {
+  stand:    { la1: -12, la2: -6, ra1: 12, ra2: 6, ll1: -6, ll2: -2, rl1: 6, rl2: 2 },
+  wave:     { la1: -12, la2: -6, ra1: 115, ra2: 165, ll1: -6, ll2: -2, rl1: 6, rl2: 2, wave: 1 },
+  point:    { la1: -12, la2: -6, ra1: 86, ra2: 86, ll1: -6, ll2: -2, rl1: 6, rl2: 2, lean: 3 },
+  pointL:   { la1: -86, la2: -86, ra1: 12, ra2: 6, ll1: -6, ll2: -2, rl1: 6, rl2: 2, lean: -3 },
+  pointUp:  { la1: -12, la2: -6, ra1: 140, ra2: 168, ll1: -6, ll2: -2, rl1: 6, rl2: 2 },
+  pointDown:{ la1: -12, la2: -6, ra1: 40, ra2: 30, ll1: -6, ll2: -2, rl1: 6, rl2: 2, lean: 6 },
+  think:    { la1: -25, la2: 55, ra1: 10, ra2: -165, ll1: -6, ll2: -2, rl1: 6, rl2: 2, tilt: -6 },
+  scratch:  { la1: -12, la2: -6, ra1: 120, ra2: -150, ll1: -6, ll2: -2, rl1: 6, rl2: 2, tilt: -8 },
+  shrug:    { la1: -60, la2: -130, ra1: 60, ra2: 130, ll1: -6, ll2: -2, rl1: 6, rl2: 2, tilt: 8 },
+  armsUp:   { la1: -140, la2: -165, ra1: 140, ra2: 165, ll1: -12, ll2: -4, rl1: 12, rl2: 4 },
+  thumbs:   { la1: -12, la2: -6, ra1: 40, ra2: 165, ll1: -6, ll2: -2, rl1: 6, rl2: 2, thumb: 1, tilt: 4 },
+  magnify:  { la1: -12, la2: -6, ra1: 70, ra2: 120, ll1: -6, ll2: -2, rl1: 6, rl2: 2, glass: 1, lean: 4 },
+  write:    { la1: -45, la2: 40, ra1: 35, ra2: -45, ll1: -6, ll2: -2, rl1: 6, rl2: 2, book: 1, nod: 1 },
+  juggle:   { la1: -120, la2: -160, ra1: 120, ra2: 160, ll1: -10, ll2: -3, rl1: 10, rl2: 3, juggle: 1 },
+  clap:     { la1: -25, la2: 45, ra1: 25, ra2: -45, ll1: -6, ll2: -2, rl1: 6, rl2: 2, clap: 1 },
+  wipe:     { la1: -12, la2: -6, ra1: 135, ra2: -110, ll1: -6, ll2: -2, rl1: 6, rl2: 2, tilt: 6 },
+  leanBack: { la1: -30, la2: -20, ra1: 30, ra2: 20, ll1: -10, ll2: -2, rl1: 10, rl2: 2, lean: -10 },
+  peek:     { la1: -40, la2: -30, ra1: 60, ra2: 70, ll1: -10, ll2: -4, rl1: 14, rl2: 4, lean: 22, tilt: 8 },
+  sit:      { la1: -30, la2: 30, ra1: 30, ra2: -30, ll1: -78, ll2: 78, rl1: 78, rl2: -78, drop: 94 },
+  sitEdge:  { la1: -35, la2: -10, ra1: 35, ra2: 10, ll1: -30, ll2: -8, rl1: 30, rl2: 8, drop: 118, swing: 1 },
+  slump:    { la1: -4, la2: 2, ra1: 4, ra2: -2, ll1: -6, ll2: -2, rl1: 6, rl2: 2, lean: 10, tilt: 14 },
+};
+const POSE0 = { la1: 0, la2: 0, ra1: 0, ra2: 0, ll1: 0, ll2: 0, rl1: 0, rl2: 0, lean: 0, tilt: 0, drop: 0, wave: 0, thumb: 0, glass: 0, book: 0, nod: 0, juggle: 0, clap: 0, swing: 0 };
+
+const FACES = {
+  happy:     { eyes: "dot", mouth: "smile", blush: 1 },
+  joy:       { eyes: "happy", mouth: "grin", blush: 1, sparkle: 1 },
+  curious:   { eyes: "dot", mouth: "o", brow: 6 },
+  confused:  { eyes: "dot", mouth: "wavy", browL: -8, browR: 12, marks: "?!" },
+  surprised: { eyes: "wide", mouth: "o", brow: 10, marks: "!" },
+  shocked:   { eyes: "wide", mouth: "bigO", brow: 14, sweat: 1, marks: "!!" },
+  worried:   { eyes: "dot", mouth: "wavy", browL: 14, browR: 14, sweat: 1 },
+  sad:       { eyes: "closed", mouth: "frown", browL: 16, browR: 16 },
+  learning:  { eyes: "dot", mouth: "smile", focus: 1 },
+  idea:      { eyes: "wide", mouth: "grin", bulb: 1, brow: 10 },
+  proud:     { eyes: "happy", mouth: "smile", blush: 1, sparkle: 1 },
+  relieved:  { eyes: "closed", mouth: "smile", blush: 1 },
+  thinking:  { eyes: "dot", mouth: "flat", browL: -6, browR: 10, look: [-.7, -.8] },
+};
+
+function mixPose(a, b, t) { const o = {}; for (const k in POSE0) o[k] = lerp(a[k] ?? 0, b[k] ?? 0, t); return o; }
+/** Pose at lt from keys [[time, name], ...], blended over `blend` seconds. */
+function poseAt(lt, keys, blend = .35) {
+  let prev = keys[0][1], cur = keys[0][1], since = 99;
+  for (let i = 0; i < keys.length; i++) if (lt >= keys[i][0]) { prev = i ? keys[i - 1][1] : keys[i][1]; cur = keys[i][1]; since = lt - keys[i][0]; }
+  return mixPose(POSES[prev], POSES[cur], easeInOut(since / blend));
+}
+/** Face at lt: [name, secondsSinceChange]. Faces switch with a small squash "pop". */
+function faceAt(lt, keys) {
+  let cur = keys[0][1], since = 99;
+  for (const [t, n] of keys) if (lt >= t) { cur = n; since = lt - t; }
+  return [cur, since];
+}
+const seg = (x, y, a, len) => [x + len * Math.sin(a * R), y + len * Math.cos(a * R)];
+
+/**
+ * The student. Feet at (x, y). opts: pose, face [name, since], T (global time), look {x, y}
+ * (world point the eyes follow), walk (0..1), phase, s (scale).
+ */
+function student(x, y, o) {
+  const s = o.s ?? 1.22, T = o.T, P = { ...o.pose };
+  const walk = o.walk ?? 0, ph = o.phase ?? 0;
+  if (walk > 0) {
+    const sw = Math.sin(ph) * 28 * walk;
+    P.ll1 = sw; P.ll2 = sw - 14 * walk * Math.max(0, Math.cos(ph)); P.rl1 = -sw; P.rl2 = -sw - 14 * walk * Math.max(0, -Math.cos(ph));
+    P.la1 = -12 - sw * .7; P.la2 = P.la1 + 12; P.ra1 = 12 + sw * .7; P.ra2 = P.ra1 - 12;
+  }
+  if (P.wave > .01) P.ra2 += Math.sin(T * 10) * 20 * P.wave;
+  if (P.nod > .01) P.tilt += Math.sin(T * 5) * 4 * P.nod;
+  if (P.clap > .01) { const c = (Math.sin(T * 14) + 1) / 2 * 22 * P.clap; P.la2 += c; P.ra2 -= c; }
+  if (P.juggle > .01) { P.la1 += Math.sin(T * 8) * 18 * P.juggle; P.ra1 += Math.sin(T * 8 + Math.PI) * 18 * P.juggle; }
+  if (P.swing > .01) { const sw = Math.sin(T * 4) * 14 * P.swing; P.ll2 += sw; P.rl2 -= sw; }
+  const bob = walk > 0 ? Math.abs(Math.sin(ph)) * 7 * walk : Math.sin(T * 2.4) * 2.2;
+  const [face, since] = o.face;
+  const F = FACES[face];
+  const ink = `stroke="${C.ink}" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" fill="none"`;
+  const hip = [0, -118 - bob + P.drop];
+  let g = `<g transform="translate(${x},${y}) scale(${s})">`;
+  g += `<ellipse cx="0" cy="4" rx="${48 - bob}" ry="9" fill="${C.ink}" opacity=".08"/>`;
+  // legs + feet
+  for (const [a1, a2, sx] of [[P.ll1, P.ll2, -14], [P.rl1, P.rl2, 14]]) {
+    const h0 = [hip[0] + sx, hip[1]], kn = seg(h0[0], h0[1], a1, 60), ft = seg(kn[0], kn[1], a2, 58);
+    g += `<path ${ink} d="M${h0} L${kn} L${ft}"/>`;
+    g += `<ellipse cx="${ft[0] + Math.sign(sx) * 7}" cy="${ft[1] + 1}" rx="15" ry="9" fill="#fff" stroke="${C.ink}" stroke-width="5"/>`;
+  }
+  // upper body rotates around the hip
+  g += `<g transform="rotate(${P.lean},${hip[0]},${hip[1]})">`;
+  const top = hip[1] - 102;
+  g += `<path d="M${-27},${top + 8} Q${-31},${top} ${-22},${top - 2} L22,${top - 2} Q31,${top} 27,${top + 8} L32,${hip[1] - 6} Q32,${hip[1] + 4} 22,${hip[1] + 4} L-22,${hip[1] + 4} Q-32,${hip[1] + 4} -32,${hip[1] - 6} Z" fill="url(#hatch)" stroke="${C.ink}" stroke-width="5.5" stroke-linejoin="round"/>`;
+  const neck = [0, top - 2], head = [0, top - 2 - 62];
+  g += `<line x1="0" y1="${neck[1]}" x2="0" y2="${neck[1] - 8}" ${ink}/>`;
+  // head (squash pop when the expression changes)
+  const sq = since < .28 ? 1 + .09 * Math.sin((since / .28) * Math.PI) : 1;
+  const hx = head[0], hy = head[1];
+  let look = F.look ?? [0, 0];
+  if (o.look && !F.look) {
+    const wx = x + hx * s, wy = y + hy * s, dx = o.look.x - wx, dy = o.look.y - wy, m = Math.hypot(dx, dy) || 1;
+    look = [dx / m, dy / m];
+  }
+  g += `<g transform="translate(${hx},${hy}) rotate(${P.tilt}) scale(${sq},${2 - sq})">`;
+  g += `<circle r="58" fill="#fff" stroke="${C.ink}" stroke-width="5.5"/>`;
+  g += `<g transform="scale(1.22)">${faceSvg(F, look, T, since)}</g>`;
+  g += `</g>`;
+  // arms + hands (drawn after the head so hands can be in front of it)
+  const shL = [-24, top + 10], shR = [24, top + 10];
+  const elL = seg(shL[0], shL[1], P.la1, 46), hdL = seg(elL[0], elL[1], P.la2, 42);
+  const elR = seg(shR[0], shR[1], P.ra1, 46), hdR = seg(elR[0], elR[1], P.ra2, 42);
+  if (P.book > .5) {
+    const bx = (hdL[0] + hdR[0]) / 2, by = (hdL[1] + hdR[1]) / 2 - 6;
+    g += `<g transform="rotate(-8,${bx},${by})"><rect x="${bx - 34}" y="${by - 26}" width="68" height="50" rx="6" fill="${C.blueL}" stroke="${C.ink}" stroke-width="4"/>` +
+      `<line x1="${bx - 22}" y1="${by - 10}" x2="${bx + 22}" y2="${by - 10}" stroke="${C.blue}" stroke-width="3"/><line x1="${bx - 22}" y1="${by + 2}" x2="${bx + 14}" y2="${by + 2}" stroke="${C.blue}" stroke-width="3"/></g>`;
+  }
+  g += `<path ${ink} d="M${shL} L${elL} L${hdL} M${shR} L${elR} L${hdR}"/>`;
+  for (const h of [hdL, hdR]) g += `<circle cx="${h[0]}" cy="${h[1]}" r="8.5" fill="#fff" stroke="${C.ink}" stroke-width="4.5"/>`;
+  if (P.thumb > .5) g += `<path ${ink} stroke-width="5" d="M${hdR[0]},${hdR[1] - 6} l2,-16"/>`;
+  if (P.book > .5) g += `<line x1="${hdR[0]}" y1="${hdR[1]}" x2="${hdR[0] - 10}" y2="${hdR[1] - 26}" stroke="${C.orange}" stroke-width="6" stroke-linecap="round"/>`;
+  if (P.glass > .5) g += `<line x1="${hdR[0]}" y1="${hdR[1]}" x2="${hdR[0] + 18}" y2="${hdR[1] - 18}" stroke="${C.ink}" stroke-width="7" stroke-linecap="round"/><circle cx="${hdR[0] + 36}" cy="${hdR[1] - 36}" r="24" fill="${C.skyL}" fill-opacity=".7" stroke="${C.ink}" stroke-width="5"/>`;
+  g += `</g>`;  // upper body
+  g += effects(F, hip, top, T, since);
+  return g + `</g>`;
+}
+
+function faceSvg(F, look, T, since) {
+  const blink = (T % 3.7) < .12 && F.eyes !== "happy" && F.eyes !== "closed";
+  const lx = look[0] * 4, ly = look[1] * 4;
+  let g = "";
+  const bl = F.browL ?? F.brow ?? 0, br = F.browR ?? F.brow ?? 0;
+  for (const side of [-1, 1]) {
+    const ex = 16 * side + lx * .6, ey = -6 + ly * .5;
+    if (F.eyes === "happy") g += `<path d="M${ex - 8},${ey + 3} Q${ex},${ey - 8} ${ex + 8},${ey + 3}" stroke="${C.ink}" stroke-width="4.5" fill="none" stroke-linecap="round"/>`;
+    else if (F.eyes === "closed" || blink) g += `<path d="M${ex - 8},${ey - 1} Q${ex},${ey + 6} ${ex + 8},${ey - 1}" stroke="${C.ink}" stroke-width="4.5" fill="none" stroke-linecap="round"/>`;
+    else if (F.eyes === "wide") g += `<circle cx="${ex}" cy="${ey}" r="10" fill="#fff" stroke="${C.ink}" stroke-width="3.5"/><circle cx="${ex + lx}" cy="${ey + ly}" r="4.5" fill="${C.ink}"/>`;
+    else g += `<ellipse cx="${ex + lx * .5}" cy="${ey + ly * .5}" rx="${F.focus ? 4.2 : 4.8}" ry="${F.focus ? 5.2 : 6.4}" fill="${C.ink}"/>`;
+    // brows: positive value raises the inner end (worried); negative frowns
+    g += `<g transform="translate(${ex},${ey - 17 - (F.brow ?? 0) * .35}) rotate(${side < 0 ? -bl : br})"><path d="M-8,1 Q0,-3 8,1" stroke="${C.ink}" stroke-width="3.5" fill="none" stroke-linecap="round"/></g>`;
+  }
+  if (F.blush) for (const side of [-1, 1]) g += `<ellipse cx="${27 * side}" cy="11" rx="8" ry="5" fill="${C.pink}" opacity=".85"/>`;
+  const my = 19 + ly * .3, mx = lx * .4;
+  const m = F.mouth;
+  if (m === "smile") g += `<path d="M${mx - 10},${my - 2} Q${mx},${my + 8} ${mx + 10},${my - 2}" stroke="${C.ink}" stroke-width="4.5" fill="none" stroke-linecap="round"/>`;
+  if (m === "grin") g += `<path d="M${mx - 13},${my - 4} Q${mx},${my - 2} ${mx + 13},${my - 4} Q${mx + 11},${my + 16} ${mx},${my + 16} Q${mx - 11},${my + 16} ${mx - 13},${my - 4} Z" fill="${C.mouth}" stroke="${C.ink}" stroke-width="3.5" stroke-linejoin="round"/><ellipse cx="${mx}" cy="${my + 11}" rx="6" ry="3.5" fill="${C.pink}"/>`;
+  if (m === "o") g += `<ellipse cx="${mx}" cy="${my + 2}" rx="5" ry="6" fill="${C.mouth}" stroke="${C.ink}" stroke-width="3"/>`;
+  if (m === "bigO") g += `<ellipse cx="${mx}" cy="${my + 4}" rx="9" ry="12" fill="${C.mouth}" stroke="${C.ink}" stroke-width="3.5"/>`;
+  if (m === "flat") g += `<path d="M${mx - 8},${my + 2} L${mx + 8},${my + 2}" stroke="${C.ink}" stroke-width="4.5" stroke-linecap="round"/>`;
+  if (m === "frown") g += `<path d="M${mx - 10},${my + 6} Q${mx},${my - 3} ${mx + 10},${my + 6}" stroke="${C.ink}" stroke-width="4.5" fill="none" stroke-linecap="round"/>`;
+  if (m === "wavy") g += `<path d="M${mx - 11},${my + 2} Q${mx - 5.5},${my - 3} ${mx},${my + 2} Q${mx + 5.5},${my + 7} ${mx + 11},${my + 2}" stroke="${C.ink}" stroke-width="4" fill="none" stroke-linecap="round"/>`;
+  return g;
+}
+
+function effects(F, hip, top, T, since) {
+  const hy = top - 64;
+  let g = "";
+  const k = easeOut(since / .3);
+  if (F.marks) {
+    const wob = Math.sin(T * 6) * 6;
+    g += `<g opacity="${k}" transform="translate(52,${hy - 58}) rotate(${12 + wob}) scale(${lerp(.4, 1, backOut(since / .35))})">` + txt(0, 0, F.marks, 54, C.orange, { w: 1000, a: "middle" }) + `</g>`;
+  }
+  if (F.sweat) { const d = (T * 22) % 16; g += `<path d="M52,${hy - 18 + d} q8,13 0,18 q-8,-5 0,-18 Z" fill="${C.sky}" stroke="${C.ink}" stroke-width="2.5" opacity="${k}"/>`; }
+  if (F.bulb) {
+    const by = hy - 92, s = lerp(.3, 1, backOut(since / .4));
+    let rays = "";
+    for (let i = 0; i < 7; i++) { const a = (-90 + (i - 3) * 30) * R, r1 = 46 + 4 * Math.sin(T * 9), r2 = 62 + 4 * Math.sin(T * 9); rays += `<line x1="${Math.cos(a) * r1}" y1="${Math.sin(a) * r1}" x2="${Math.cos(a) * r2}" y2="${Math.sin(a) * r2}" stroke="${C.orange}" stroke-width="6" stroke-linecap="round"/>`; }
+    g += `<g transform="translate(0,${by}) scale(${s})" opacity="${k}">${rays}<circle r="30" fill="${C.yellow}" stroke="${C.ink}" stroke-width="4"/><rect x="-13" y="26" width="26" height="16" rx="4" fill="#cbd5e1" stroke="${C.ink}" stroke-width="3.5"/></g>`;
+  }
+  if (F.sparkle) for (let i = 0; i < 3; i++) {
+    const a = (-150 + i * 60) * R, r = 78 + 6 * Math.sin(T * 5 + i), tw = .6 + .4 * Math.sin(T * 8 + i * 2);
+    g += `<g opacity="${k * tw}">${star(Math.cos(a) * r, hy + Math.sin(a) * r, 13 * tw + 4, C.orange)}</g>`;
+  }
+  return g;
+}
+
+// ------------------------------------------------------------------ scenes
+// fn(lt, L, T) -> { svg, kid: {x, y, pose, face, look?, walk?, phase?, s?}, top? }
+// L[i] = { s, e, text } narration line i (seconds from scene start). at(L[i], "phrase") gives
+// the moment a phrase starts in that line (by position in the text).
+
+const at = (line, phrase) => {
+  const i = line.text.toLowerCase().indexOf(phrase.toLowerCase());
+  return line.s + (line.e - line.s) * (i < 0 ? 0 : i / line.text.length);
+};
+const SCENES = {};
+
+SCENES.hook = (lt, L, T) => {
+  let svg = "";
+  // question card on a string
+  const kD = win(lt, L[1].s - .15, .75), cx = 1270;
+  if (kD > 0) {
+    const drop = lerp(-700, 0, backOut(kD));
+    const sw = 7 * Math.sin((lt - L[1].s) * 3.2) * Math.exp(-Math.max(0, lt - L[1].s) * .9);
+    svg += `<g transform="rotate(${sw},${cx},0) translate(0,${drop})">` +
+      `<line x1="${cx}" y1="-10" x2="${cx}" y2="210" stroke="${C.ink}" stroke-width="5"/><circle cx="${cx}" cy="210" r="9" fill="${C.ink}"/>` +
+      card(cx - 300, 210, 600, 420) +
+      `<circle cx="${cx}" cy="350" r="78" fill="${C.blueL}"/>` + icon("world-www", cx, 350, 110, C.blue, 1.8) +
+      pop(cx + 78, 285, win(lt, L[2].s + .2, .4), `<circle cx="${cx + 78}" cy="285" r="38" fill="${C.orange}" stroke="${C.ink}" stroke-width="4"/>` + txt(cx + 78, 304, "?", 54, "#fff", { w: 1000, a: "middle" })) +
+      txt(cx, 510, "Does it work?", 50, C.ink, { w: 900, a: "middle" }) + txt(cx, 575, "Is it safe?", 50, C.blue, { w: 900, a: "middle" }) + `</g>`;
+  }
+  const walkK = win(lt, 0, 1.5);
+  const x = lerp(-180, 620, easeOut(walkK));
+  const pose = poseAt(lt, [[0, "stand"], [1.45, "wave"], [L[1].s, "stand"], [L[2].s + .3, "scratch"], [L[2].e - 1.4, "shrug"]]);
+  const face = faceAt(lt, [[0, "happy"], [L[1].s, "curious"], [L[2].s + .3, "confused"], [L[2].e - 1.4, "curious"]]);
+  return { svg, kid: { x, y: GROUND, pose, face, walk: 1 - easeInOut(win(lt, 1.15, .35)), phase: lt * 9, look: lt > L[1].s - .2 ? { x: cx, y: 400 } : null } };
+};
+
+const BARS = [
+  { v: 22, l1: "Stolen", l2: "passwords", ic: "password-user", col: C.blue, x: 820, ph: "Stolen" },
+  { v: 20, l1: "Weak spots", l2: "in software", ic: "bug", col: C.orange, x: 1160, ph: "Weak spots" },
+  { v: 16, l1: "Trick", l2: "emails", ic: "mail-exclamation", col: C.sky, x: 1500, ph: "trick emails" },
+];
+SCENES.problem = (lt, L, T) => {
+  let svg = sceneTitle("The problem", "alert-triangle", C.red, win(lt, L[0].s, .5));
+  // three small breakages
+  const cards = [["hand-stop", "Button does nothing", "A button"], ["shopping-cart-x", "Checkout fails", "A checkout"], ["bug", "Error shows secrets", "An error"]];
+  const goneK = win(lt, L[3].s, .5);
+  const redK = win(lt, L[2].s + .2, .4);
+  cards.forEach(([ic, label, ph], i) => {
+    const t0 = at(L[1], ph) - .1, k = win(lt, t0, .45);
+    if (k <= 0 || goneK >= 1) return;
+    const x = 640 + i * 400, y = 300;
+    const stroke = redK > .5 ? C.red : C.ink;
+    const inner = card(x, y, 360, 250, { stroke, fill: redK > .5 ? C.redL : "#fff" }) +
+      icon(ic, x + 180, y + 95, 92, redK > .5 ? C.red : C.ink, 1.7) + txt(x + 180, y + 200, label, 32, C.ink, { w: 900, a: "middle" });
+    svg += `<g opacity="${1 - goneK}" transform="translate(0,${-120 * easeIn(goneK)})">` + pop(x + 180, y + 125, k, inner) + `</g>`;
+  });
+  // the attacker's eye peeking over the cards
+  const kE = win(lt, L[2].s + .3, .5);
+  if (kE > 0 && goneK < 1) {
+    const ex = lerp(700, 1640, (Math.sin((lt - L[2].s) * 1.6) + 1) / 2);
+    svg += `<g opacity="${(1 - goneK) * clamp(kE * 2)}"><circle cx="${ex}" cy="250" r="44" fill="${C.ink}"/>` + icon("eye", ex, 250, 56, "#fff", 2.2) + `</g>`;
+  }
+  // bar chart growing out of the floor
+  const rise = easeOut(win(lt, L[3].s + 1.1, 1.6)) * (1 - easeInOut(win(lt, L[5].s + .1, .8)));
+  const kC = win(lt, L[3].s + .7, .5);
+  if (kC > 0 && rise > 0) {
+    svg += `<g opacity="${clamp(kC * 2)}">` + txt(120, 250, "How break-ins start", 52, C.ink, { w: 900 }) +
+      txt(122, 296, "out of every 100 breaches (Verizon DBIR 2025)", 26, C.mut, { w: 700 }) + `</g>`;
+    BARS.forEach((b, i) => {
+      const h = b.v / 22 * 400 * rise, x = b.x - 115, y = GROUND - h;
+      const hl = lt >= at(L[4], b.ph) && lt < L[5].s;
+      const anyHl = BARS.some(c => lt >= at(L[4], c.ph)) && lt >= L[4].s && lt < L[5].s;
+      const op = anyHl && !hl ? .45 : 1;
+      svg += `<g opacity="${op}"><rect x="${x}" y="${y}" width="230" height="${h + 12}" rx="22" fill="${b.col}" stroke="${C.ink}" stroke-width="${hl ? 7 : 4}"/>`;
+      if (h > 200) {
+        svg += txt(b.x, y + 70, `${b.v}`, 60, "#fff", { w: 1000, a: "middle" }) + txt(b.x, y + 104, "in 100", 24, "#fff", { w: 800, a: "middle" });
+        svg += icon(b.ic, b.x, GROUND - 150, 50, "#fff", 2.2) + txt(b.x, GROUND - 92, b.l1, 27, "#fff", { w: 900, a: "middle" }) + txt(b.x, GROUND - 60, b.l2, 27, "#fff", { w: 900, a: "middle" });
+      }
+      svg += `</g>`;
+    });
+  }
+  // the cost
+  const kS1 = win(lt, L[6].s - .1, .5), kS2 = win(lt, L[7].s - .1, .5), out = win(lt, L[8].s, .5);
+  if (kS1 > 0 && out < 1) {
+    const n = 4.44 * easeOut(win(lt, L[6].s + .2, 1.8));
+    let coins = "";
+    for (let i = 0; i < 6; i++) {
+      const p = ((lt - L[6].s) * .6 + i / 6) % 1;
+      coins += `<g opacity="${(1 - p) * clamp((lt - L[6].s) * 2)}">` + `<circle cx="${1540 + i * 34 + p * 60}" cy="${300 - p * 160 + i * 6}" r="17" fill="${C.yellow}" stroke="${C.ink}" stroke-width="3.5"/>` + `</g>`;
+    }
+    svg += fadeOut(out, slide(60, 0, kS1, card(640, 250, 1100, 270) + `<circle cx="760" cy="385" r="70" fill="${C.greenL}" stroke="${C.ink}" stroke-width="4"/>` + icon("currency-dollar", 760, 385, 80, C.green, 2.2) +
+      txt(870, 395, `$${n.toFixed(2)} million`, 92, C.ink, { w: 1000 }) + txt(872, 452, "average cost of one data breach", 32, C.mut, { w: 800 }) + txt(872, 492, "IBM Cost of a Data Breach Report 2025", 22, C.soft, { w: 700 }) + coins));
+  }
+  if (kS2 > 0 && out < 1) {
+    const d = Math.round(241 * easeOut(win(lt, L[7].s + .2, 1.6)));
+    const flip = Math.sin(lt * 2) * 12;
+    svg += fadeOut(out, slide(60, 0, kS2, card(640, 560, 1100, 250) + `<circle cx="760" cy="685" r="64" fill="${C.orangeL}" stroke="${C.ink}" stroke-width="4"/>` +
+      `<g transform="rotate(${flip},760,685)">${icon("hourglass", 760, 685, 74, C.orange, 2.2)}</g>` +
+      txt(870, 700, `${d} days`, 92, C.ink, { w: 1000 }) + txt(872, 752, "to find and stop a breach (IBM 2025)", 30, C.mut, { w: 800 })));
+  }
+  // juggling by hand
+  const kJ = win(lt, L[8].s + .2, .4), fall = win(lt, L[8].s + (L[8].e - L[8].s) * .55, .7);
+  if (kJ > 0) {
+    svg += slide(40, 0, kJ, txt(760, 420, "Checking by hand:", 64, C.ink, { w: 1000 }) + txt(760, 500, "slow, and things", 64, C.red, { w: 1000 }) + txt(760, 580, "get missed.", 64, C.red, { w: 1000 }));
+  }
+  // where the student is
+  const walkToBar = win(lt, L[3].s + .1, .9), walkBack = win(lt, L[5].s + 1, .9);
+  let x = 330, y = GROUND, walk = 0;
+  if (lt >= L[3].s) { x = lerp(330, 1160, easeInOut(walkToBar)); walk = walkToBar > 0 && walkToBar < 1 ? 1 : 0; }
+  if (lt >= L[3].s + 1) y = GROUND - 20 / 22 * 400 * rise;
+  if (lt >= L[5].s + 1) { x = lerp(1160, 330, easeInOut(walkBack)); walk = walkBack > 0 && walkBack < 1 ? 1 : 0; }
+  const wobble = lt > L[3].s + 1 && lt < L[3].s + 2.8 ? Math.sin(lt * 14) * 5 * (1 - win(lt, L[3].s + 1.4, 1.4)) : 0;
+  if (kJ > 0) {  // juggled task cards
+    const icons = ["forms", "login", "checklist", "bug"];
+    icons.forEach((ic, i) => {
+      const ph = lt * 4 + i * Math.PI / 2;
+      let jx = x + Math.cos(ph) * 110, jy = GROUND - 420 + Math.sin(ph) * 60 - Math.abs(Math.cos(ph)) * 40;
+      if (fall > 0) { jx = lerp(jx, x - 260 + i * 170, easeOut(fall)); jy = lerp(jy, GROUND - 34, easeIn(fall)); }
+      svg += `<g opacity="${kJ}">` + `<rect x="${jx - 34}" y="${jy - 34}" width="68" height="68" rx="14" fill="#fff" stroke="${C.ink}" stroke-width="4" transform="rotate(${fall > 0 ? i * 35 * fall : Math.sin(ph) * 10},${jx},${jy})"/>` + icon(ic, jx, jy, 40, C.blue, 2) + `</g>`;
+    });
+  }
+  const pose = poseAt(lt, [
+    [0, "stand"], [L[0].s + .3, "sit"], [L[2].s, "leanBack"], [L[3].s, "stand"], [L[3].s + 1, "armsUp"],
+    [at(L[4], "Stolen"), "pointL"], [at(L[4], "Weak"), "pointDown"], [at(L[4], "trick"), "point"],
+    [L[5].s, "stand"], [L[6].s, "leanBack"], [L[7].s, "slump"], [L[8].s + .2, "juggle"], [L[8].s + (L[8].e - L[8].s) * .55, "slump"],
+  ]);
+  const faces = [[0, "happy"], [L[0].s + .3, "learning"]];
+  cards.forEach(([, , ph]) => { const t = at(L[1], ph); faces.push([t, "surprised"], [t + .8, "learning"]); });
+  faces.push([L[2].s + .2, "worried"], [L[3].s + 1.1, "surprised"], [L[4].s, "learning"], [L[5].s, "worried"], [L[6].s + .3, "shocked"], [L[7].s + .2, "sad"], [L[8].s + .2, "worried"], [L[8].s + (L[8].e - L[8].s) * .6, "sad"]);
+  const face = faceAt(lt, faces);
+  const look = lt < L[3].s ? { x: 1100, y: 420 } : lt < L[6].s ? { x: 1160, y: 700 } : { x: 1100, y: 450 };
+  pose.lean += wobble;
+  return { svg, kid: { x, y, pose, face, look, walk, phase: lt * 11 } };
+};
+
+const NEEDS = [
+  ["browser", "Real tests in a real browser", "Clicks, forms and checkouts, like a person", C.blue],
+  ["file-certificate", "Proof for every problem", "A screenshot, the steps, and a fix", C.green],
+  ["shield-check", "Safety first", "The tester never becomes the danger", C.orange],
+];
+SCENES.needs = (lt, L, T) => {
+  let svg = sceneTitle("What teams need", "target-arrow", C.blue, win(lt, L[0].s, .5));
+  const kB = win(lt, L[0].s + .8, .5);
+  if (kB > 0) {
+    svg += slide(60, 0, kB, card(720, 200, 1100, 600));
+    NEEDS.forEach(([ic, t1, t2, col], i) => {
+      const k = win(lt, L[i + 1].s, .45), y = 230 + i * 185;
+      if (k <= 0) return;
+      svg += slide(40, 0, k, `<circle cx="800" cy="${y + 80}" r="30" fill="${col}"/>` + txt(800, y + 94, String(i + 1), 38, "#fff", { w: 1000, a: "middle" }) +
+        `<circle cx="910" cy="${y + 80}" r="50" fill="${C.floor}" stroke="${C.ink}" stroke-width="4"/>` + icon(ic, 910, y + 80, 58, col, 2) +
+        txt(990, y + 78, t1, 42, C.ink, { w: 900 }) + txt(990, y + 122, t2, 28, C.mut, { w: 700 }) + checkMark(1740, y + 80, 34, win(lt, L[i + 1].s + 1, .5)));
+      if (i < 2) svg += `<line x1="760" y1="${y + 172}" x2="1780" y2="${y + 172}" stroke="${C.line}" stroke-width="3" opacity="${k}"/>`;
+    });
+  }
+  const thinkEnd = L[0].s + (L[0].e - L[0].s) * .7;
+  const pose = poseAt(lt, [[0, "stand"], [L[0].s + .1, "think"], [thinkEnd, "pointUp"], [L[1].s, "write"], [L[3].s + .8, "thumbs"]]);
+  const face = faceAt(lt, [[0, "curious"], [L[0].s + .1, "thinking"], [thinkEnd, "idea"], [L[1].s, "learning"], [L[3].s + .8, "proud"]]);
+  return { svg, kid: { x: 380, y: GROUND, pose, face, look: lt > L[1].s ? { x: 1100, y: 500 } : null } };
+};
+
+SCENES.meet = (lt, L, T) => {
+  let svg = "";
+  const rise = backOut(win(lt, L[0].s - .15, 1.0));
+  const topY = lerp(GROUND + 20, 470, rise);
+  const cx = 960, w = 1040, h = 310;
+  svg += `<defs><clipPath id="aboveFloor"><rect x="0" y="0" width="1920" height="${GROUND}"/></clipPath></defs>`;
+  svg += `<g clip-path="url(#aboveFloor)">` + card(cx - w / 2, topY, w, h, { stroke: C.ink }) +
+    `<circle cx="${cx - w / 2 + 140}" cy="${topY + 150}" r="92" fill="${C.blueL}" stroke="${C.ink}" stroke-width="4"/>` + icon("shield-check", cx - w / 2 + 140, topY + 150, 116, C.blue, 2) +
+    txt(cx - w / 2 + 270, topY + 165, "AgentGuard", 100, C.ink, { w: 1000 }) +
+    (lt > L[1].s ? slide(0, 16, win(lt, L[1].s, .5), txt(cx - w / 2 + 274, topY + 225, "Your friendly AI tester for websites", 34, C.mut, { w: 800 })) : "") + `</g>`;
+  // confetti burst
+  const kc = lt - (L[0].s + .5);
+  if (kc > 0 && kc < 3.2) {
+    for (let i = 0; i < 46; i++) {
+      const a = (-160 + rnd(i) * 140) * R, v = 420 + rnd(i + 9) * 520;
+      const px = cx + Math.cos(a) * v * kc * .55, py = topY + Math.sin(a) * v * kc * .55 + 340 * kc * kc;
+      const col = [C.orange, C.blue, C.green, C.red, C.yellow][i % 5];
+      if (py > GROUND - 12) continue; // confetti lands on the floor, never over the captions
+      svg += `<rect x="${px}" y="${py}" width="16" height="10" rx="3" fill="${col}" opacity="${clamp(1 - (kc - 2) / 1.2)}" transform="rotate(${kc * 400 * (rnd(i + 3) - .5)},${px},${py})"/>`;
+    }
+  }
+  const pose = poseAt(lt, [[0, "stand"], [L[0].s + .2, "armsUp"], [L[1].s, "sitEdge"]], .4);
+  const face = faceAt(lt, [[0, "curious"], [L[0].s + .2, "joy"], [L[1].s, "happy"]]);
+  const y = Math.min(GROUND, topY) - (lt < L[0].s + .2 ? 0 : 0);
+  return { svg, kid: { x: cx + w / 2 - 40, y: lt < L[0].s - .15 ? GROUND : y, pose, face } };
+};
+
+const CHECKS = [["browser", "Pages", "pages"], ["forms", "Forms", "forms"], ["login", "Logins", "logins"], ["currency-dollar", "Checkout", "checkouts"], ["shield-check", "Security", "security"]];
+SCENES.how = (lt, L, T) => {
+  let svg = sceneTitle("How it works", "bolt", C.orange, win(lt, L[0].s, .5));
+  // 1-2: link bar and the plan
+  const out12 = win(lt, L[3].s, .5);
+  const kU = win(lt, L[1].s, .5);
+  const url = "shop.example.com";
+  const typed = Math.floor(url.length * clamp((lt - L[1].s - .4) / ((L[1].e - L[1].s) * .7)));
+  const caretX = 680 + typed * 25.5;
+  if (kU > 0 && out12 < 1) {
+    svg += fadeOut(out12, slide(0, 30, kU, card(560, 210, 1240, 130) + icon("link", 625, 275, 50, C.blue, 2.2) +
+      txt(680, 292, url.slice(0, Math.max(0, typed)), 46, C.ink, { w: 800 }) +
+      ((T * 2) % 1 < .55 ? `<rect x="${caretX + 4}" y="248" width="5" height="54" rx="2" fill="${C.blue}"/>` : "") +
+      pill(1590, 238, 180, 76, typed >= url.length ? C.blue : C.blueL) + txt(1680, 290, "Scan", 36, typed >= url.length ? "#fff" : C.blue, { w: 900, a: "middle" })));
+  }
+  const kP = win(lt, L[2].s, .5);
+  if (kP > 0 && out12 < 1) {
+    let plan = card(560, 380, 1240, 400) + `<circle cx="670" cy="490" r="64" fill="${C.blueL}" stroke="${C.ink}" stroke-width="4"/>` + icon("robot", 670, 490, 74, C.blue, 2) +
+      txt(760, 474, "AI test plan", 46, C.ink, { w: 900 }) + txt(762, 514, "written for your website", 28, C.mut, { w: 700 });
+    plan += pop(1620, 440, win(lt, at(L[2], "running on Vultr"), .45), pill(1490, 405, 270, 66, C.skyL) + icon("cloud", 1535, 438, 34, C.sky, 2.2) + txt(1650, 450, "Runs on Vultr", 28, C.ink, { w: 900, a: "middle" }));
+    ["Open every page", "Try the checkout", "Check security"].forEach((s, i) => {
+      plan += slide(30, 0, win(lt, L[2].s + .8 + i * .5, .4), `<rect x="${760}" y="${575 + i * 62}" width="36" height="36" rx="8" fill="#fff" stroke="${C.ink}" stroke-width="4"/>` + txt(815, 604 + i * 62, `${i + 1}. ${s}`, 34, C.ink, { w: 800 }));
+    });
+    svg += fadeOut(out12, slide(0, 30, kP, plan));
+  }
+  // 3-6: sandboxes
+  const out36 = win(lt, L[7].s, .5);
+  const trash = easeInOut(win(lt, at(L[6], "thrown away") - .2, .9));
+  [640, 1000, 1360].forEach((bx, i) => {
+    const k = win(lt, L[3].s + .3 + i * .35, .5);
+    if (k <= 0 || out36 >= 1) return;
+    const drop = lerp(-500, 0, backOut(k));
+    let box = card(bx, 300 + drop, 300, 250, { dash: "", fill: C.greenL, stroke: C.ink }) + icon("box", bx + 40, 340 + drop, 36, C.green, 2.2) + txt(bx + 66, 352 + drop, "Safe box", 28, C.ink, { w: 900 }) +
+      `<rect x="${bx + 40}" y="${385 + drop}" width="220" height="130" rx="14" fill="#fff" stroke="${C.ink}" stroke-width="4"/><line x1="${bx + 40}" y1="${413 + drop}" x2="${bx + 260}" y2="${413 + drop}" stroke="${C.ink}" stroke-width="4"/>` +
+      `<circle cx="${bx + 60}" cy="${399 + drop}" r="5" fill="${C.red}"/><circle cx="${bx + 78}" cy="${399 + drop}" r="5" fill="${C.orange}"/><circle cx="${bx + 96}" cy="${399 + drop}" r="5" fill="${C.green}"/>` + icon("browser", bx + 150, 465 + drop, 54, C.blue, 2);
+    if (i === 1 && trash > 0) {
+      box = `<g transform="translate(${bx + 150},${425 + 360 * trash}) rotate(${trash * 50}) scale(${lerp(1, .15, trash)}) translate(${-(bx + 150)},${-425})" opacity="${1 - win(lt, at(L[6], "thrown away") + .5, .3)}">${box}</g>`;
+    }
+    svg += fadeOut(out36, `<g opacity="${clamp(k * 2)}">${box}</g>`);
+  });
+  // 4: what it checks
+  const outChips = win(lt, L[5].s, .4);
+  CHECKS.forEach(([ic, label, ph], i) => {
+    const t0 = at(L[4], ph), k = win(lt, t0 - .1, .4);
+    if (k <= 0 || outChips >= 1) return;
+    const cx = 640 + i * 236;
+    svg += fadeOut(outChips, pop(cx + 106, 660, k, pill(cx, 622, 212, 76, C.greenL) + icon(ic, cx + 40, 660, 34, C.green, 2.2) + txt(cx + 68, 672, label, 28, C.ink, { w: 900 }) + checkMark(cx + 185, 660, 16, win(lt, t0 + .25, .35))));
+  });
+  // 5-6: the unsafe attempt
+  const kA = win(lt, L[5].s + .3, (L[5].e - L[5].s) * .8);
+  const kStop = win(lt, L[6].s - .05, .3);
+  if (lt > L[5].s && out36 < 1) {
+    svg += fadeOut(out36, pop(1700, 190, win(lt, L[5].s, .4), `<circle cx="1700" cy="190" r="70" fill="${C.redL}" stroke="${C.ink}" stroke-width="4"/>` + icon("cloud-lock", 1700, 186, 76, C.red, 2) + txt(1700, 300, "Private cloud data", 26, C.ink, { w: 900, a: "middle" })));
+    const len = 760, shown = kStop > 0 ? .62 : easeInOut(kA);
+    svg += fadeOut(out36, `<path d="M1150,300 C1200,140 1450,110 1620,170" fill="none" stroke="${kStop > 0 ? C.soft : C.red}" stroke-width="8" stroke-linecap="round" stroke-dasharray="${len * shown} ${len}" pathLength="${len}"/>`);
+  }
+  if (kStop > 0 && out36 < 1) {
+    svg += fadeOut(out36, pop(1430, 160, kStop, `<circle cx="1430" cy="160" r="74" fill="${C.red}" stroke="${C.ink}" stroke-width="5"/>` + icon("hand-stop", 1430, 160, 84, "#fff", 2.4) + txt(1430, 270, "BLOCKED", 34, C.red, { w: 1000, a: "middle" })));
+    svg += fadeOut(out36, slide(60, 0, win(lt, at(L[6], "written in a log"), .45), card(1350, 640, 430, 130) + icon("checklist", 1410, 705, 52, C.blue, 2) + txt(1460, 698, "Written in the log", 30, C.ink, { w: 900 }) + txt(1460, 736, "blocked and recorded", 24, C.mut, { w: 700 })));
+    svg += fadeOut(out36, pop(1150, 760, win(lt, at(L[6], "thrown away") - .4, .4), `<circle cx="1150" cy="760" r="66" fill="${C.redL}" stroke="${C.ink}" stroke-width="4"/>` + icon("trash", 1150, 760, 70, C.red, 2)));
+  }
+  // 7-8: the report and the answer
+  const kR = win(lt, L[7].s + .3, .5);
+  if (kR > 0) {
+    let rep = card(560, 200, 820, 590) + `<circle cx="650" cy="290" r="50" fill="${C.blueL}" stroke="${C.ink}" stroke-width="4"/>` + icon("report-analytics", 650, 290, 56, C.blue, 2) + txt(720, 306, "Your report", 50, C.ink, { w: 1000 });
+    [["bug", "What broke", "Checkout fails at the last step", C.red, "What broke"], ["eye", "The proof", "Screenshot and the exact steps", C.blue, "the proof"], ["bulb", "How to fix it", "One clear suggestion", C.orange, "how to fix"]].forEach(([ic, t1, t2, col, ph], i) => {
+      const y = 380 + i * 132;
+      rep += slide(30, 0, win(lt, at(L[7], ph) - .1, .4), `<circle cx="650" cy="${y + 45}" r="42" fill="#fff" stroke="${col}" stroke-width="5"/>` + icon(ic, 650, y + 45, 46, col, 2.2) + txt(720, y + 38, t1, 38, C.ink, { w: 900 }) + txt(720, y + 78, t2, 28, C.mut, { w: 700 }));
+    });
+    svg += slide(0, 40, kR, rep);
+  }
+  const ANS = [["Block", C.red, "Block"], ["Fix first", C.orange, "fix first"], ["Safe to ship", C.green, "safe to ship"]];
+  ANS.forEach(([label, col, ph], i) => {
+    const t0 = at(L[8], ph), k = win(lt, L[8].s + .2 + i * .15, .4);
+    if (k <= 0) return;
+    const lit = lt >= t0, y = 260 + i * 160;
+    svg += slide(50, 0, k, pill(1440, y, 400, 120, lit ? col : "#fff", C.ink) + `<circle cx="1510" cy="${y + 60}" r="30" fill="${lit ? "#fff" : col}" opacity="${lit ? .9 : .35}"/>` +
+      txt(1560, y + 74, label, 42, lit ? "#fff" : C.ink, { w: 1000 }));
+  });
+  // student
+  const hop = lt > L[0].s && lt < L[0].s + .55 ? Math.sin(win(lt, L[0].s, .55) * Math.PI) * 60 : 0;
+  const walkIn = win(lt, L[3].s + .2, 1.1), walkOut = win(lt, L[7].s, .9);
+  let x = 300, walk = 0;
+  if (lt >= L[3].s) { x = lerp(300, 470, easeInOut(walkIn)); walk = walkIn > 0 && walkIn < 1 ? 1 : 0; }
+  if (lt >= L[7].s) { x = lerp(470, 300, easeInOut(walkOut)); walk = walkOut > 0 && walkOut < 1 ? 1 : 0; }
+  const stopT = L[6].s;
+  const pose = poseAt(lt, [[0, "stand"], [L[0].s, "armsUp"], [L[0].s + .6, "stand"], [L[2].s, "magnify"], [L[3].s, "stand"], [L[3].s + 1.4, "peek"], [L[4].s, "clap"], [L[5].s, "leanBack"], [stopT, "armsUp"], [stopT + 1.2, "wipe"], [L[7].s + 1, "magnify"], [L[8].s + .3, "point"]]);
+  const face = faceAt(lt, [[0, "curious"], [L[0].s, "joy"], [L[0].s + .7, "curious"], [L[2].s, "learning"], [L[3].s, "curious"], [L[3].s + 1.6, "happy"], [L[4].s, "happy"], [L[5].s + .2, "worried"], [stopT, "shocked"], [stopT + 1.2, "relieved"], [L[7].s, "learning"], [L[8].s + .3, "idea"], [L[8].e - .6, "proud"]]);
+  const look = lt < L[2].s ? { x: caretX, y: 275 } : lt < L[3].s ? { x: 900, y: 550 } : lt < L[5].s ? { x: 800, y: 450 } : lt < L[7].s ? { x: 1430, y: 200 } : lt < L[8].s ? { x: 900, y: 450 } : { x: 1600, y: 400 };
+  return { svg, kid: { x, y: GROUND - hop, pose, face, look, walk, phase: lt * 10 } };
+};
+
+SCENES.close = (lt, L, T) => {
+  let svg = "";
+  svg += pop(560, 400, win(lt, 0, .6), `<circle cx="560" cy="400" r="120" fill="${C.blueL}" stroke="${C.ink}" stroke-width="5"/>` + icon("shield-check", 560, 400, 150, C.blue, 2));
+  svg += slide(0, 30, win(lt, .2, .6), txt(730, 420, "AgentGuard", 120, C.ink, { w: 1000 }));
+  svg += slide(0, 24, win(lt, at(L[0], "Test it"), .5), txt(736, 495, "Test it before your users do.", 46, C.mut, { w: 800 }));
+  const kV = win(lt, L[1].s, .5);
+  if (kV > 0) svg += pop(950, 610, kV, pill(736, 560, 430, 100, C.blue) + icon("cloud", 800, 610, 48, "#fff", 2.4) + txt(990, 626, "Built on Vultr", 44, "#fff", { w: 1000, a: "middle" }));
+  const pose = poseAt(lt, [[0, "wave"], [L[1].s + .2, "thumbs"]]);
+  const face = faceAt(lt, [[0, "happy"], [L[1].s + .2, "proud"]]);
+  return { svg, kid: { x: 1560, y: GROUND, pose, face, look: { x: 900, y: 450 } } };
+};
+
+// ------------------------------------------------------------------ compositor
+
+let TL = null;
+window.setup = async (timeline) => {
+  TL = timeline;
+  ICONS = {};
+  for (const [name, svg] of Object.entries(timeline.icons || {})) ICONS[name] = svg.replace(/^[\s\S]*?<svg[^>]*>/, "").replace(/<\/svg>\s*$/, "");
+  await document.fonts.load("900 40px Nunito");
+  await document.fonts.load("700 40px Nunito");
+  return document.fonts.check("900 40px Nunito");
+};
+
+function wrapCaption(s, max = 62) {
+  if (s.length <= max) return [s];
+  const mid = s.length / 2;
+  let best = -1;
+  for (let i = 0; i < s.length; i++) if (s[i] === " " && (best < 0 || Math.abs(i - mid) < Math.abs(best - mid))) best = i;
+  return best < 0 ? [s] : [s.slice(0, best), s.slice(best + 1)];
+}
+
+window.renderAt = (T) => {
+  const scenes = TL.scenes;
+  let sc = scenes[scenes.length - 1];
+  for (const s of scenes) if (T >= s.start && T < s.end) { sc = s; break; }
+  const lt = T - sc.start;
+  const L = sc.lines.map(l => ({ s: l.start - sc.start, e: l.end - sc.start, text: l.text }));
+  const out = SCENES[sc.id](lt, L, T);
+  let svg = `<defs><pattern id="hatch" width="9" height="9" patternUnits="userSpaceOnUse" patternTransform="rotate(-35)">` +
+    `<rect width="9" height="9" fill="#fff4dc"/><rect width="4.5" height="9" fill="${C.orange}"/></pattern></defs>`;
+  svg += `<rect width="1920" height="1080" fill="${C.bg}"/>`;
+  svg += `<rect x="0" y="${GROUND}" width="1920" height="${1080 - GROUND}" fill="${C.floor}"/><line x1="0" y1="${GROUND}" x2="1920" y2="${GROUND}" stroke="${C.line}" stroke-width="4"/>`;
+  svg += out.svg;
+  const k = out.kid;
+  svg += student(k.x, k.y, { pose: k.pose, face: k.face, T, look: k.look, walk: k.walk ?? 0, phase: k.phase ?? 0, s: k.s });
+  const line = sc.lines.find(l => T >= l.start && T < l.end + .3);
+  if (line) {
+    const parts = wrapCaption(line.text);
+    const y0 = parts.length > 1 ? 965 : 992;
+    parts.forEach((p, i) => { svg += `<text x="960" y="${y0 + i * 50}" font-size="40" text-anchor="middle" fill="${C.ink}" font-weight="800">${esc(p)}</text>`; });
+  }
+  const fadeIn = clamp(1 - lt / .35);
+  const total = scenes[scenes.length - 1].end;
+  const fadeOutAll = clamp((T - (total - .8)) / .8);
+  const veil = Math.max(sc === scenes[0] ? clamp(1 - lt / .5) : fadeIn, fadeOutAll);
+  if (veil > 0) svg += `<rect width="1920" height="1080" fill="#fff" opacity="${veil}"/>`;
+  document.getElementById("stage").innerHTML = svg;
+  return true;
+};
+</script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+{
+  "name": "AgentGuard",
+  "palette": {
+    "bg": "#0b1520",
+    "panel": "#142231",
+    "line": "#2e4a66",
+    "ink": "#e8f1fa",
+    "muted": "#9fb3c8",
+    "accent": "#4a8fe7",
+    "ok": "#3ddc97",
+    "danger": "#ff5a5f",
+    "warn": "#f2b84b"
+  },
+  "type": {
+    "display": "Bahnschrift, 'Segoe UI', Arial, sans-serif",
+    "body": "'Segoe UI', Arial, sans-serif",
+    "mono": "Consolas, 'Cascadia Mono', monospace"
+  },
+  "radius": { "card": 18, "pill": 999 },
+  "tone": "Plain, concrete, confident. No hype words. No em-dashes in visible copy.",
+  "logo": "Shield with a check mark, accent stroke on panel fill (SHIELD in templates/product_hero.html, shieldPath in explainer/stage.html)."
+}

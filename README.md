@@ -482,6 +482,7 @@ Another copy is still running. Close the old terminal, or start on another port:
 | 🎬 [`SUBMISSION_PACK.md`](SUBMISSION_PACK.md) | Pitch deck, demo video script, submission text |
 | 🧭 [`SETUP_GUIDE.md`](SETUP_GUIDE.md) | Team setup with Claude in 5 minutes |
 | 📦 [`sandbox-worker/README.md`](sandbox-worker/README.md) | How to write a new check |
+| 🎬 [`media/README.md`](media/README.md) | Explainer video + product images: tool stack and how to render them |
 | 🤝 [`docs/contracts/`](docs/contracts/) | Shared data formats and open questions |
 | 🧠 [`docs/agent.md`](docs/agent.md) | AI planner, verifier and scoring: rules and design |
 | 📈 [`docs/agent-eval.md`](docs/agent-eval.md) | Verifier false-positive eval on real check output |

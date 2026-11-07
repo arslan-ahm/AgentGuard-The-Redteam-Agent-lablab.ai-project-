@@ -1,0 +1,73 @@
+{
+  "title": "AgentGuard: a friendly explainer",
+  "fps": 30,
+  "tts": { "engine": "piper", "voice": "en_US-ljspeech-high", "length_scale": 1.08 },
+  "timing": { "scene_lead_s": 0.6, "line_gap_s": 0.45, "scene_tail_s": 1.0 },
+  "scenes": [
+    {
+      "id": "hook",
+      "title": "A question",
+      "lines": [
+        { "text": "Hi there!", "screen": "White room, soft floor", "student": "Walks in, stops, waves", "face": "happy" },
+        { "text": "Quick question.", "screen": "A question card drops in on a string and swings", "student": "Looks up at the card", "face": "curious" },
+        { "text": "When you build a website, how do you know it works, and that it's safe, before real people use it?", "screen": "Card: website icon with a big ?, 'Does it work? Is it safe?'", "student": "Scratches head, ?! pops over him, then shrugs", "face": "confused" }
+      ]
+    },
+    {
+      "id": "problem",
+      "title": "The problem",
+      "lines": [
+        { "text": "Let's look at the problem.", "screen": "Label: The problem", "student": "Sits down cross-legged, ready to learn", "face": "learning" },
+        { "text": "Websites break in small ways. A button that does nothing. A checkout that fails. An error that shows secret details.", "screen": "Three cards pop in one by one: broken button, failed checkout, leaked error", "student": "Jumps a little at each card", "face": "surprised" },
+        { "text": "And attackers look for exactly these weak spots.", "screen": "Cards turn red, an eye peeks over them", "student": "Leans back", "face": "worried" },
+        { "text": "A big 2025 study by Verizon looked at how break-ins usually start.", "screen": "Bar chart grows out of the floor; the middle bar lifts the student up", "student": "Gets lifted, wobbles", "face": "surprised" },
+        { "text": "Stolen passwords. Weak spots in software. And trick emails.", "screen": "Each bar lights up as it is named: 22, 20 and 16 out of 100", "student": "Points at each bar from on top", "face": "learning" },
+        { "text": "And when it goes wrong, it costs a lot.", "screen": "Bars sink away", "student": "Hops down to the floor", "face": "worried" },
+        { "text": "IBM found that one data breach costs about four point four million dollars on average,", "screen": "Big counter rolls up to $4.44 million, coins fly", "student": "Mouth wide open", "face": "shocked" },
+        { "text": "and takes around two hundred and forty days to find and stop.", "screen": "Hourglass and a counter to 241 days", "student": "Droops, tired", "face": "sad" },
+        { "text": "Checking everything by hand is slow, and things get missed.", "screen": "Label: By hand is slow", "student": "Juggles task cards, they fall", "face": "worried" }
+      ]
+    },
+    {
+      "id": "needs",
+      "title": "What teams need",
+      "lines": [
+        { "text": "So, what do teams really need?", "screen": "Label: What teams need", "student": "Hand on chin, then a lightbulb pops", "face": "idea" },
+        { "text": "One. Real tests, in a real browser.", "screen": "Checklist row 1 ticks: real browser", "student": "Writes in a notebook, nods", "face": "learning" },
+        { "text": "Two. Clear proof for every problem, so it's quick to fix.", "screen": "Row 2 ticks: proof for every problem", "student": "Keeps writing, nods", "face": "learning" },
+        { "text": "Three. Safety first. The tester must never become the danger.", "screen": "Row 3 ticks: safety first", "student": "Thumbs up", "face": "proud" }
+      ]
+    },
+    {
+      "id": "meet",
+      "title": "Meet AgentGuard",
+      "lines": [
+        { "text": "Meet AgentGuard!", "say": "Meet Agent Guard!", "screen": "The AgentGuard card rises from the floor, confetti", "student": "Lifted up on the card, arms up", "face": "joy" },
+        { "text": "Your friendly AI tester for websites.", "screen": "Subtitle on the card", "student": "Sits on the card, swings his legs", "face": "happy" }
+      ]
+    },
+    {
+      "id": "how",
+      "title": "How it works",
+      "lines": [
+        { "text": "Here's how it works.", "screen": "Label: How it works", "student": "Hops down", "face": "curious" },
+        { "text": "First, you paste your website link.", "screen": "A link bar types shop.example.com", "student": "Eyes follow the typing", "face": "curious" },
+        { "text": "An AI planner, running on Vultr, writes a test plan.", "say": "An AI planner, running on Vulture, writes a test plan.", "screen": "Robot card and a 3-step plan; 'runs on Vultr' tag", "student": "Reads with a magnifying glass", "face": "learning" },
+        { "text": "Then every test runs inside its own safe box, called a sandbox, with a real browser.", "screen": "Three sandbox boxes drop in, each with a browser", "student": "Walks over and peeks into a box", "face": "curious" },
+        { "text": "It checks pages, forms, logins, checkouts, and security settings.", "screen": "Five check chips tick one by one", "student": "Claps along", "face": "happy" },
+        { "text": "And if a test ever tries something unsafe,", "screen": "A red arrow sneaks from a box toward a private cloud", "student": "Freezes, sweat drop", "face": "worried" },
+        { "text": "it's blocked, written in a log, and that box is thrown away.", "screen": "STOP sign slams down, log card, the box falls into the bin", "student": "Startled, then wipes his forehead", "face": "relieved" },
+        { "text": "At the end, you get a clear report. What broke, the proof, and how to fix it.", "screen": "Report card with three rows", "student": "Reads it", "face": "learning" },
+        { "text": "Plus one simple answer. Block, fix first, or safe to ship.", "screen": "Three answer lights glow as they are named", "student": "Points, smiles", "face": "idea" }
+      ]
+    },
+    {
+      "id": "close",
+      "title": "Close",
+      "lines": [
+        { "text": "AgentGuard. Test it before your users do.", "say": "Agent Guard. Test it before your users do.", "screen": "Logo and tagline", "student": "Waves goodbye", "face": "happy" },
+        { "text": "Built on Vultr.", "say": "Built on Vulture.", "screen": "Built on Vultr badge", "student": "Thumbs up", "face": "proud" }
+      ]
+    }
+  ]
+}

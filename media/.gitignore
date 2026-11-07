@@ -1,0 +1,8 @@
+# Generated: re-create with media/tools/*. Upload finished videos/images; don't commit them.
+explainer/build/
+explainer/out/
+out/
+comfy/models/
+comfy/output/
+voices/
+
