@@ -107,7 +107,7 @@ Full details and how each control is tested: [docs/containment-policy.md](docs/c
 | 🖥️ **Ayesha** | 0 | 0 | 10 | 0 |
 | 🔌 **Sohaib** | 9 | 2 | 1 | 0 |
 | 🧠 **Sarah** | 0 | 0 | 11 | 0 |
-| 🛡️ **Arslan** | 12 | 1 | 0 | 3 |
+| 🛡️ **Arslan** | 13 | 0 | 0 | 3 |
 
 **Shared foundation:** ✅ project structure, Docker setup, CI, shared data formats (`shared/contracts-py`, `frontend/src/api/contracts.ts`).
 
@@ -177,7 +177,7 @@ Full details and how each control is tested: [docs/containment-policy.md](docs/c
 | 🚀 Sandbox launcher (limits, read-only, cap-drop, always destroyed) | ✅ |
 | 🌐 In-browser network guard, DNS pinning, egress firewall script | ✅ |
 | 🛂 URL policy (DNS, private/metadata IPs, redirects) | ✅ |
-| 🧽 Secret redaction, 🔗 hash-chained audit log, 🚦 rate limits | 🟡 PR open (`feat/policy-audit-redaction`) |
+| 🧽 Secret redaction, 🔗 hash-chained audit log, 🚦 rate limits | ✅ |
 | 🔐 Security checks: headers, cookies, https_redirect, error_leak | ✅ |
 | 🔐 Security checks: url_session_leak, open_redirect, reflected_input, exposed_endpoints, login_rate_probe | ✅ |
 | 🧯 Containment demo trigger | ✅ |
