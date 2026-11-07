@@ -105,7 +105,7 @@ Full details and how each control is tested: [docs/containment-policy.md](docs/c
 | | ✅ | 🟡 | ⏳ | ⛔ |
 |---|:-:|:-:|:-:|:-:|
 | 🖥️ **Ayesha** | 0 | 0 | 10 | 0 |
-| 🔌 **Sohaib** | 0 | 1 | 11 | 0 |
+| 🔌 **Sohaib** | 8 | 3 | 1 | 0 |
 | 🧠 **Sarah** | 0 | 0 | 11 | 0 |
 | 🛡️ **Arslan** | 12 | 1 | 0 | 3 |
 
@@ -134,17 +134,17 @@ Full details and how each control is tested: [docs/containment-policy.md](docs/c
 
 | Task | Status |
 |---|:-:|
-| 🗄️ DB models + migrations | ⏳ |
-| 🔑 Auth (`POST /auth/login`) | ⏳ |
-| 🔌 Scan endpoints (`POST/GET /scans`, findings, evidence, report, audit) | 🟡 skeleton |
-| ⚙️ Queue + orchestrator state machine (planner → sandbox → verifier → score) | ⏳ |
-| 🔗 Wire Arslan's pieces: `UrlValidator`, `ScanRateLimiter`, `HashChainedAuditLog`, `DockerSandboxRunner(work_root=AGENTGUARD_WORK_ROOT)` | ⏳ |
-| 🧯 Trigger for the containment demo task (`security.exposed_endpoints`, `containment_demo: true`) | ⏳ |
-| 📡 SSE progress + audit events, approvals endpoint | ⏳ |
-| 🧪 QA checks: pages_load, console_network_errors, links_assets, forms | ⏳ |
-| 🧪 QA checks: login, password_reset, search, checkout, accessibility | ⏳ |
-| 🛒 Flawed demo store (`scripts/demo-store/`) | ⏳ |
-| 📝 Media: API overview + curl examples (README), slide 10 data | ⏳ |
+| 🗄️ DB models + migrations | ✅ merged (#16, #17); migration tested on Postgres 16 |
+| 🔑 Auth (`POST /auth/login`) | ✅ merged (#17); response shape proposed in CR-2 (#13) |
+| 🔌 Scan endpoints (`POST/GET /scans`, findings, evidence, report, audit) | ✅ merged (#17); PDF report answers 501 |
+| ⚙️ Queue + orchestrator state machine (planner → sandbox → verifier → score) | ✅ merged (#17); runs with the fake planner until Sarah's planner/verifier land |
+| 🔗 Wire Arslan's pieces: `UrlValidator`, `ScanRateLimiter`, `HashChainedAuditLog`, `DockerSandboxRunner(work_root=AGENTGUARD_WORK_ROOT)` | ✅ merged (#17); run for real with Docker, Redis/RQ and Postgres locally; full `docker compose up` not run yet |
+| 🧯 Trigger for the containment demo task (`security.exposed_endpoints`, `containment_demo: true`) | ✅ merged (#17); header `X-AgentGuard-Demo: containment`, blocked in a real container |
+| 📡 SSE progress + audit events, approvals endpoint | 🟡 merged (#17); SSE only tested through the test client, approvals record the decision but send nothing to GitHub |
+| 🧪 QA checks: pages_load, console_network_errors, links_assets, forms | ✅ merged (#14); run in real Chromium against the demo store |
+| 🧪 QA checks: login, password_reset, search, checkout, accessibility | 🟡 merged (#14); checkout and accessibility found real flaws, login/password_reset/search have no real-browser detection test yet |
+| 🛒 Flawed demo store (`scripts/demo-store/`) | ✅ merged (#15); not deployed, needs a public hostname for a real scan |
+| 📝 Media: API overview + curl examples (README), slide 10 data | 🟡 draft in `docs/submission/sohaib-media.md`, examples not yet checked against the deployed API |
 | 🗣️ Media: video segment | ⏳ |
 
 </details>
