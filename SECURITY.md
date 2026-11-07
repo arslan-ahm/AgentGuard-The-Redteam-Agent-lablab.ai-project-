@@ -40,6 +40,6 @@ The full control list, with where each control is enforced and how it's tested, 
 ## Secrets
 
 - Real secrets live only in `.env` on the server. `.env` is gitignored, and [`deploy/dotenv.example`](deploy/dotenv.example) holds names only.
-- CI runs a secret scan (gitleaks) on every pull request.
+- There is no automatic secret scan: check your diff before every push, and never commit `.env` or keys.
 - Credentials for a target, if any, are injected as short-lived environment variables and never appear in task files, logs or LLM prompts.
 - If a secret is ever committed: rotate it first, then remove it from history.

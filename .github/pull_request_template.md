@@ -23,4 +23,4 @@ Owner:
 - [ ] Audit events emitted where required
 - [ ] Short doc added (module README or ARCHITECTURE.md / docs/)
 - [ ] No containment, policy or approval control weakened
-- [ ] CI is green before merging
+- [ ] Local checks for my area are green (output pasted above)

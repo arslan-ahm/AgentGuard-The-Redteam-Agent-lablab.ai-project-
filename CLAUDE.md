@@ -36,7 +36,7 @@ Skip this only when the first message already names a roster member (e.g. `/star
 - Tests, docs, and a handoff note (section 9) are part of every task.
 - Only describe features in the deck, video and README that actually work in the deployed demo.
 - Never commit secrets (`.env` is gitignored; only `.env.example` is committed). Never weaken containment, policy, or approval controls.
-- Follow the Git workflow above: branch → checks → push → PR → green CI → merge on GitHub. Small PRs (under ~400 lines).
+- Follow the Git workflow above: branch → local checks → push → PR → merge on GitHub. Small PRs (under ~400 lines).
 - Commit as the person running the session, with their own git identity.
 
 ## Git workflow (mandatory: nothing is ever committed or pushed to `main`)
@@ -45,7 +45,7 @@ Skip this only when the first message already names a roster member (e.g. `/star
 3. Commit with Conventional Commits (`feat(sandbox): add pids limit`), using the user's own git identity. Never use `--no-verify`, and never bypass or edit the hooks.
 4. Run your area's checks (README "Checks") until green, then `git push -u origin <branch>`.
 5. Open a PR into `main` with `gh pr create --base main --fill`, filling in the PR template; the title is a Conventional Commit.
-6. CI must be green ("CI passed"). Fix failures on the same branch and push again. No review approval is required: once CI is green, the author merges the PR on GitHub. **Never push to `main`, never force-push to someone else's branch.**
+6. There is no GitHub CI: the local checks from step 4 are the gate, and their real output goes in the PR's "How tested". No review approval is required: the author merges the PR on GitHub. **Never push to `main`, never force-push to someone else's branch.**
 
 ## Code layout and commands
 - Ownership map and local setup: `README.md`. Frozen contracts in code: `shared/contracts-py` (Python) and `frontend/src/api/contracts.ts` (TS). Never redefine them inside a module.
