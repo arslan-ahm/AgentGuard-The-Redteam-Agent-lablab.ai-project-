@@ -25,6 +25,7 @@ from app.sandbox.launcher import (
     SubprocessRunner,
     build_docker_run_args,
     container_name,
+    redact_evidence_files,
     refuse_unsafe_mount,
     sanitize_out_dir,
 )
@@ -668,3 +669,36 @@ async def test_unparseable_evidence_is_blanked_not_kept(tmp_path: Path) -> None:
     await runner.run(make_task())
     _, out_dir = runner.task_dirs(make_task())
     assert json.loads((out_dir / "console.json").read_text()) == []
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="Windows can't rename over a read-only file")
+def test_redaction_rewrites_read_only_evidence(tmp_path: Path) -> None:
+    """On the VM the sandbox (pwuser) leaves its files 0644 and owned by another user, so the
+    worker can't open them for writing. Read-only files in a writable dir reproduce that:
+    the old in-place write raised PermissionError and every task errored."""
+    out = tmp_path / "out"
+    out.mkdir()
+    out.chmod(0o777)
+    evidence = out / "network_summary.json"
+    evidence.write_text(json.dumps([{"headers": {"Authorization": "Bearer abc123def"}}]))
+    evidence.chmod(0o444)
+
+    assert redact_evidence_files(out) == ["network_summary.json"]
+
+    text = evidence.read_text()
+    assert "abc123def" not in text and "[REDACTED]" in text
+    assert evidence.stat().st_mode & 0o777 == 0o644
+    assert [p.name for p in out.iterdir()] == ["network_summary.json"]  # no temp file left
+
+
+def test_redaction_leaves_no_temp_files(tmp_path: Path) -> None:
+    out = tmp_path / "out"
+    out.mkdir()
+    (out / "console.json").write_text(json.dumps([{"text": "password=hunter2"}]))
+    (out / "network_summary.json").write_text("{not json")
+
+    assert sorted(redact_evidence_files(out)) == ["console.json", "network_summary.json"]
+
+    assert sorted(p.name for p in out.iterdir()) == ["console.json", "network_summary.json"]
+    assert "hunter2" not in (out / "console.json").read_text()
+    assert json.loads((out / "network_summary.json").read_text()) == []

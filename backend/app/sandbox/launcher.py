@@ -20,6 +20,7 @@ Containment flags (all built by :func:`build_docker_run_args`, every one asserte
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import ipaddress
 import json
 import os
@@ -27,6 +28,7 @@ import re
 import secrets
 import shutil
 import sys
+import tempfile
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
@@ -409,9 +411,30 @@ def redact_evidence_files(out_dir: Path) -> list[str]:
             clean = redact(data)
         except (OSError, ValueError):
             clean = []
-        path.write_text(json.dumps(clean, indent=2), encoding="utf-8")
+        _replace_file(path, json.dumps(clean, indent=2))
         rewritten.append(name)
     return rewritten
+
+
+def _replace_file(path: Path, text: str) -> None:
+    """Atomically replace ``path`` with ``text``.
+
+    The sandbox runs as a different user (Playwright's ``pwuser``) and leaves its files
+    read-only for everyone else, so the worker can't open them for writing. It can create
+    files in the per-task ``out/`` directory (mode 0777), so it writes a fresh temp file there
+    and renames it over the original. ``mkstemp`` creates the file exclusively, so a symlink
+    the sandbox left behind can't redirect the write; ``os.replace`` replaces the link itself.
+    """
+    fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=f".{path.name}.", suffix=".tmp")
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as handle:
+            handle.write(text)
+        os.chmod(tmp, 0o644)  # the API serves evidence from a read-only mount
+        os.replace(tmp, path)
+    except BaseException:
+        with contextlib.suppress(OSError):
+            os.unlink(tmp)
+        raise
 
 
 def _redact_result(result: SandboxResult) -> SandboxResult:
