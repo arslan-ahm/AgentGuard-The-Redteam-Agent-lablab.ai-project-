@@ -107,7 +107,7 @@ Full details and how each control is tested: [docs/containment-policy.md](docs/c
 
 | | ✅ | 🟡 | ⏳ | ⛔ |
 |---|:-:|:-:|:-:|:-:|
-| 🖥️ **Ayesha** | 0 | 0 | 10 | 0 |
+| 🖥️ **Ayesha** | 0 | 8 | 2 | 0 |
 | 🔌 **Sohaib** | 9 | 2 | 1 | 0 |
 | 🧠 **Sarah** | 10 | 0 | 0 | 1 |
 | 🛡️ **Arslan** | 13 | 0 | 0 | 3 |
@@ -119,14 +119,14 @@ Full details and how each control is tested: [docs/containment-policy.md](docs/c
 
 | Task | Status |
 |---|:-:|
-| 🧭 App scaffold, routes, API client + mock data | ⏳ |
-| 🔐 Login page | ⏳ |
-| 📊 Dashboard (scan list + scores) and new-scan form (URL, profile, authorization checkbox) | ⏳ |
-| 📡 Live progress view (SSE): planning → sandbox → tests → **red "Blocked by policy"** + sandbox destroyed | ⏳ |
-| 🧾 Findings list, severity badges, evidence viewer (screenshot, network summary, repro) | ⏳ |
-| ✋ Approval dialog (GitHub issue / send report) | ⏳ |
-| 📄 Report page, Markdown + PDF export, decision banner | ⏳ |
-| 🐙 GitHub issue body template | ⏳ |
+| 🧭 App scaffold, routes, API client + mock data | 🟡 built on `feat/web-scaffold`, not merged yet; tested in mock mode and against the local backend |
+| 🔐 Login page | 🟡 built on `feat/web-scaffold`, not merged yet; tested in mock mode and against the local backend |
+| 📊 Dashboard (scan list + scores) and new-scan form (URL, profile, authorization checkbox) | 🟡 built on `feat/web-scaffold`, not merged yet; tested in mock mode and against the local backend; attestation not stored by the API yet (CR-3) |
+| 📡 Live progress view (SSE): planning → sandbox → tests → **red "Blocked by policy"** + sandbox destroyed | 🟡 built on `feat/web-scaffold`, not merged yet; tested in mock mode and against the local backend (fake sandbox) |
+| 🧾 Findings list, severity badges, evidence viewer (screenshot, network summary, repro) | 🟡 built on `feat/web-scaffold`, not merged yet; tested in mock mode and against the local backend; evidence viewer checked with mock files only |
+| ✋ Approval dialog (GitHub issue / send report) | 🟡 built on `feat/web-scaffold`, not merged yet; tested in mock mode and against the local backend; records the decision only, like the API |
+| 📄 Report page, Markdown + PDF export, decision banner | 🟡 built on `feat/web-scaffold`, not merged yet; tested in mock mode and against the local backend; PDF via the browser's print dialog |
+| 🐙 GitHub issue body template | 🟡 built on `feat/web-scaffold`, not merged yet; tested in mock mode and against the local backend |
 | 🎬 Media: deck design (12 slides), video lead + edit, screenshots, logo | ⏳ |
 | 📘 Media: final README pass from a clean clone, submission text | ⏳ |
 

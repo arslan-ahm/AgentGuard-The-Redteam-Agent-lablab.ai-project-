@@ -1,5 +1,14 @@
-// Starter shell only. Owner: Ayesha (Web app / UI) builds the real screens here (brief 6.1),
-// running the ui-ux-flow design process first.
+// Web app root. Owner: Ayesha (Web app / UI, brief 6.1).
+import { createBrowserRouter, RouterProvider } from 'react-router'
+import { routes } from './app/routes'
+import { AuthProvider } from './auth/AuthProvider'
+
+const router = createBrowserRouter(routes)
+
 export default function App() {
-  return <main>AgentGuard</main>
+  return (
+    <AuthProvider>
+      <RouterProvider router={router} />
+    </AuthProvider>
+  )
 }
