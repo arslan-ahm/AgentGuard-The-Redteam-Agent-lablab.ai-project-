@@ -249,6 +249,51 @@ async def test_search_without_form_reports_nothing(tmp_path: Path) -> None:
     assert page.request.get_calls == []
 
 
+async def test_search_off_origin_or_post_form_is_skipped(tmp_path: Path) -> None:
+    off = form("https://search.example.net/search", [("q", "search")], method="get")
+    post = form(f"{TARGET}/search", [("q", "text")])
+    page = FakePage(forms=[off, post])
+    ctx = make_ctx(tmp_path, page)
+    assert await search.run(page, ctx) == []
+    assert page.request.get_calls == []
+    assert ctx.requests[-1]["skipped"] == "no search form found"
+
+
+async def test_search_200_with_error_text_is_not_flagged(tmp_path: Path) -> None:
+    # Documented limit: only the HTTP status is judged (see test_qa_detection_live.py).
+    page = FakePage(forms=[SEARCH])
+    page.request.default_status = 200
+    page.request.gets[f"{TARGET}/search?q=agentguard-probe-s2"] = FakeAPIResponse(
+        200, body="<p class=error>Sorry, search is unavailable.</p>"
+    )
+    ctx = make_ctx(tmp_path, page, probe_marker="agentguard-probe-s2")
+    assert await search.run(page, ctx) == []
+
+
+# --- edge cases: login and password_reset --------------------------------------------
+
+
+async def test_login_without_form_records_a_skip(tmp_path: Path) -> None:
+    page = FakePage(forms=[SEARCH, RESET])
+    ctx = make_ctx(tmp_path, page)
+    assert await login.run(page, ctx) == []
+    assert ctx.requests[-1]["skipped"] == "no login form found"
+    assert page.request.post_calls == []
+
+
+async def test_password_reset_falls_back_to_forgot_password(tmp_path: Path) -> None:
+    forgot = form(f"{TARGET}/forgot-password", [("user_email", "text")])
+    page = FakePage(
+        routes={f"{TARGET}/password-reset": FakeResponse(404)},
+        forms=[forgot],
+    )
+    page.request.posts[f"{TARGET}/forgot-password"] = crash_on_post
+    found = await password_reset.run(page, make_ctx(tmp_path, page))
+    assert titles(found) == ["Password reset fails for an unknown address (HTTP 500)"]
+    assert page.visited == [f"{TARGET}/password-reset", f"{TARGET}/forgot-password"]
+    assert_contract(found, "qa.password_reset")
+
+
 # --- checkout ------------------------------------------------------------------------
 
 

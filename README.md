@@ -146,7 +146,7 @@ Full details and how each control is tested: [docs/containment-policy.md](docs/c
 | 🧯 Trigger for the containment demo task (`security.exposed_endpoints`, `containment_demo: true`) | ✅ merged (#17); header `X-AgentGuard-Demo: containment`, blocked in a real container |
 | 📡 SSE progress + audit events, approvals endpoint | ✅ merged (#17); SSE streamed live during a real Docker scan; approvals record the decision only (nothing sent to GitHub) |
 | 🧪 QA checks: pages_load, console_network_errors, links_assets, forms | ✅ merged (#14); run in real Chromium against the demo store |
-| 🧪 QA checks: login, password_reset, search, checkout, accessibility | 🟡 merged (#14); login, password_reset and search have no real detection test yet |
+| 🧪 QA checks: login, password_reset, search, checkout, accessibility | 🟡 detection tests added, branch test/qa-detection-checks (not merged), done by Arslan |
 | 🛒 Flawed demo store (`scripts/demo-store/`) | ✅ merged (#15); not deployed (needs a public hostname for a real scan) |
 | 📝 Media: API overview + curl examples (README), slide 10 data | 🟡 README "API overview" added (branch `feat/api-attestation`, done by Arslan); checked against the test suite, not a deployed API |
 | 🗣️ Media: video segment | ⏳ |
@@ -499,7 +499,7 @@ Honest list, kept current. Anything here is **not** shown as working in the demo
 - 🌐 **No public demo yet.** The Vultr VM isn't created, so the live demo URL is still to come.
 - 📄 **PDF report:** the API answers `501` for `format=pdf`. The web app saves the report as PDF through the browser's print dialog instead.
 - ✋ **Approvals are recorded only.** Approving a GitHub issue or a report records the decision; nothing is filed or sent yet.
-- 🧪 **QA checks:** login, password reset and search have no real detection test yet.
+- 🧪 **QA checks:** `qa.search` judges only the HTTP status, so a 200 page saying "search is unavailable" is not reported. Live-browser detection tests for login, password reset and search run with `AGENTGUARD_LIVE_BROWSER=1`.
 - ☁️ **Vultr Serverless Inference:** the client is tested with a scripted model, not yet against the live endpoint. If the model fails, the deterministic fallback plan is used.
 
 ---
