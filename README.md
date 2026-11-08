@@ -30,6 +30,9 @@ Imagine hiring a careful tester who:
 
 AgentGuard is that tester, built with AI. 🤖
 
+> [!NOTE]
+> 🚧 **Today it runs through the API** (`/docs`). The web app is being built, and approvals are recorded but nothing is sent anywhere yet.
+
 > [!IMPORTANT]
 > 🙅 AgentGuard is **not a hacking tool**. It runs only **safe, harmless checks**, and only on websites **you own or have permission to test**.
 
@@ -44,18 +47,18 @@ flowchart LR
     C --> D["🌐 Robot browser<br/>clicks through the site"]
     D --> E["🔍 Verifier<br/>double-checks problems"]
     E --> F["📊 Report<br/>score + fixes"]
-    F --> G["✅ You approve<br/>before anything is sent"]
+    F --> G["✅ You approve<br/>or decline"]
 ```
 
 | Step | What happens | In plain words |
 |:-:|---|---|
-| 1️⃣ | You enter a URL and pick a test type (Smoke, QA, Security or Full Audit) | "Test this site, please" |
+| 1️⃣ | You send a URL and a test type (Smoke, QA, Security or Full Audit) to the API | "Test this site, please" |
 | 2️⃣ | The **AI planner** writes a test plan | Like a to-do list for the tester |
 | 3️⃣ | Each test runs in a fresh **sandbox** that is thrown away afterwards | A sealed room that's cleaned after each job |
 | 4️⃣ | A **robot browser** (Playwright) uses the site and takes screenshots | A browser that clicks by itself |
 | 5️⃣ | The **verifier** re-checks every problem so false alarms are dropped | A second opinion |
 | 6️⃣ | You get a **score from 0 to 100** and a verdict | A report card |
-| 7️⃣ | Nothing is sent (no GitHub issue, no email) until **you click approve** | You stay in control |
+| 7️⃣ | A person approves or declines the result; the decision is recorded in the audit log | You stay in control |
 
 ### 🧮 How the score works
 
@@ -137,7 +140,7 @@ Full details and how each control is tested: [docs/containment-policy.md](docs/c
 | 🗄️ DB models + migrations | ✅ merged (#16, #17); tested on Postgres 16 |
 | 🔑 Auth (`POST /auth/login`) | ✅ merged (#17); response shape proposed in CR-2 (#13) |
 | 🔌 Scan endpoints (`POST/GET /scans`, findings, evidence, report, audit) | ✅ merged (#17); PDF report answers 501 |
-| ⚙️ Queue + orchestrator state machine (planner → sandbox → verifier → score) | ✅ merged (#17); uses the fake planner until Sarah's lands |
+| ⚙️ Queue + orchestrator state machine (planner → sandbox → verifier → score) | ✅ merged (#17); uses Sarah's planner and verifier since #22 |
 | 🔗 Wire Arslan's pieces: `UrlValidator`, `ScanRateLimiter`, `HashChainedAuditLog`, `DockerSandboxRunner(work_root=AGENTGUARD_WORK_ROOT)` | ✅ merged (#17); run with real Docker, Redis/RQ and Postgres locally; full `docker compose up` not run |
 | 🧯 Trigger for the containment demo task (`security.exposed_endpoints`, `containment_demo: true`) | ✅ merged (#17); header `X-AgentGuard-Demo: containment`, blocked in a real container |
 | 📡 SSE progress + audit events, approvals endpoint | ✅ merged (#17); SSE streamed live during a real Docker scan; approvals record the decision only (nothing sent to GitHub) |
@@ -151,6 +154,8 @@ Full details and how each control is tested: [docs/containment-policy.md](docs/c
 
 <details open>
 <summary>🧠 <b>Sarah</b>: Agent planner · Verifier + scoring</summary>
+
+> Built by **Arslan** (with Claude) for Sarah's modules, at the team lead's request, in PR #22. Sarah reviews the code and approves [CR-3](docs/change-requests/CR-3-verifier-interface.md).
 
 | Task | Status |
 |---|:-:|
@@ -217,23 +222,14 @@ cd agentguard
 git config core.hooksPath .githooks       # 🔒 turns on the "no commits to main" safety hooks
 ```
 
-### 3. ▶️ Run it (two terminal windows)
+### 3. ▶️ Run it
 
-**Terminal 1: backend (the brain)**
 ```bash
 cd backend
 uv sync                                   # installs everything
 uv run uvicorn app.main:app --reload      # starts the server
 ```
 👉 Open **http://localhost:8000/docs** to see every API endpoint and try it.
-
-**Terminal 2: frontend (the website)**
-```bash
-cd frontend
-bun install                               # installs everything
-bun run dev                               # starts the website
-```
-👉 Open **http://localhost:5173**
 
 <details>
 <summary>🐳 <b>Run everything with Docker instead</b> (click to open)</summary>
@@ -244,9 +240,8 @@ cp deploy/dotenv.example .env                       # make your settings file
 docker compose --profile build-only build sandbox   # builds the safety-box image
 docker compose up --build                           # starts everything
 ```
-👉 Open **http://localhost**
 
-This starts 6 parts together: website, backend, background worker, database (PostgreSQL), queue (Redis) and the locked-down Docker proxy the worker uses to start safety boxes. Putting it on a real server (Vultr): [docs/deploy-vultr.md](docs/deploy-vultr.md).
+This starts 6 parts together: the web app (a placeholder for now), backend, background worker, database (PostgreSQL), queue (Redis) and the locked-down Docker proxy the worker uses to start safety boxes. Putting it on a real server (Vultr): [docs/deploy-vultr.md](docs/deploy-vultr.md).
 </details>
 
 <details>
@@ -263,7 +258,6 @@ Copy `deploy/dotenv.example` to `.env` and fill it in. **Never commit `.env` to 
 | `VULTR_INFERENCE_*` | Vultr AI keys. Empty = use the built-in backup plan | Optional |
 | `SANDBOX_*` | Limits for the safety box (CPU, memory, time) | Optional |
 | `ALLOWED_ORIGINS` | Which websites may call the API | Optional |
-| `GITHUB_TOKEN` | Only used after you approve filing an issue | Optional |
 | `SITE_ADDRESS` | `:80` locally; your domain online (HTTPS is automatic) | For deploy |
 
 Make a `SECRET_KEY`:
@@ -401,9 +395,9 @@ Method, labels and limits: [docs/agent-eval.md](docs/agent-eval.md) · Design: [
 | 🧠 **Vultr Serverless Inference** (OpenAI-compatible API) | Writes the test plan for each scan, the executive summary, and a second opinion on borderline findings | No GPU servers to run. It only ever sees redacted, shortened page text, never passwords or cookies. If it's unavailable, built-in fallback plans keep scans working |
 | 🧱 **Vultr Firewall** | Lets in only web traffic (80/443) and SSH from our IP | A second wall in front of the VM's own firewall |
 
-**How a scan uses them:**
+**How a scan uses them** _(once the VM is deployed)_**:**
 
-1. You submit a URL on the VM-hosted site.
+1. You submit a URL to the API on the VM.
 2. Serverless Inference plans the tests.
 3. The worker on the VM starts a locked-down Playwright container for each test.
 4. Results come back as evidence.
@@ -438,7 +432,7 @@ Step-by-step deployment: [docs/deploy-vultr.md](docs/deploy-vultr.md).
 | **Vultr** | The cloud company that hosts our servers and AI |
 | **Endpoint** | One specific API address, e.g. `/api/v1/scans` |
 | **Finding** | One problem AgentGuard found, with proof |
-| **Pull request (PR)** | A request to add your changes to the main code, merged once the automatic checks pass |
+| **Pull request (PR)** | A request to add your changes to the main code, merged once your local checks pass |
 | **`.env` file** | A private settings file with passwords. Never shared |
 | **uv / Bun** | Tools that install and run Python / JavaScript projects |
 
@@ -457,7 +451,7 @@ Close and reopen the terminal after installing. If it still fails, reinstall fro
 <details>
 <summary><b>❓ The API answers <code>not_implemented</code></b></summary>
 
-That's expected right now. The endpoint exists but its feature isn't built yet. See [Project status](#-project-status).
+Only the PDF report does that today (`?format=pdf`). Use `format=json` or `format=md`.
 </details>
 
 <details>
@@ -467,7 +461,7 @@ Start **Docker Desktop** and wait until it says *running*, then try again.
 </details>
 
 <details>
-<summary><b>❓ Port 8000 or 5173 is already in use</b></summary>
+<summary><b>❓ Port 8000 is already in use</b></summary>
 
 Another copy is still running. Close the old terminal, or start on another port: `uv run uvicorn app.main:app --port 8001`.
 </details>
