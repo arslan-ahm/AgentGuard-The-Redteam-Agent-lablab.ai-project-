@@ -14,7 +14,7 @@
 ![Docker](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white)
 ![License: MIT](https://img.shields.io/badge/license-MIT-green)
 
-[🤔 What is it](#-what-is-agentguard) · [⚙️ How it works](#️-how-it-works) · [🚦 Status](#-project-status) · [🚀 Quick start](#-quick-start) · [👥 Team](#-team--who-owns-what) · [📖 Glossary](#-glossary-new-to-these-words)
+**[🌐 Live demo](https://78-141-194-157.sslip.io)** · [🤔 What is it](#-what-is-agentguard) · [⚙️ How it works](#️-how-it-works) · [🚦 Status](#-project-status) · [🚀 Quick start](#-quick-start) · [👥 Team](#-team--who-owns-what) · [📖 Glossary](#-glossary-new-to-these-words)
 
 </div>
 
@@ -111,7 +111,7 @@ Full details and how each control is tested: [docs/containment-policy.md](docs/c
 | 🖥️ **Ayesha** | 8 | 2 | 0 | 0 |
 | 🔌 **Sohaib** | 9 | 2 | 1 | 0 |
 | 🧠 **Sarah** | 10 | 0 | 0 | 1 |
-| 🛡️ **Arslan** | 13 | 0 | 0 | 3 |
+| 🛡️ **Arslan** | 13 | 2 | 0 | 1 |
 
 **Shared foundation:** ✅ project structure, Docker setup, shared data formats (`shared/contracts-py`, `frontend/src/api/contracts.ts`).
 
@@ -192,8 +192,8 @@ Full details and how each control is tested: [docs/containment-policy.md](docs/c
 | 📜 Media #4: SECURITY.md + containment policy | ✅ |
 | ☁️ Media #5: Vultr write-up (README) | ✅ |
 | 🗣️ Media #14 + slides 6–8 + video script: Q&A, slide content, 2:30–3:05 script | ✅ |
-| ☁️ Create the Vultr VM + deploy the live demo | ⛔ needs a VM |
-| ⏱️ Media #6: uptime monitoring + fill in region / size / model | ⛔ needs the live demo |
+| ☁️ Create the Vultr VM + deploy the live demo | 🟡 deployed: https://78-141-194-157.sslip.io (London, 4 vCPU / 8 GB, Ubuntu 24.04), `healthcheck.sh` HEALTHY; demo login created, a live scan with the containment demo ran (Blocked by policy, sandbox destroyed) |
+| ⏱️ Media #6: uptime monitoring + fill in region / size / model | 🟡 region, size and model filled in below; external uptime monitor not set up yet |
 | 🎥 Record video segment 2:30–3:05 | ⛔ needs the live demo + UI |
 
 </details>
@@ -444,7 +444,7 @@ curl -s -X POST http://localhost:8000/api/v1/scans \
 | 🧠 **Vultr Serverless Inference** (OpenAI-compatible API) | Writes the test plan for each scan, the executive summary, and a second opinion on borderline findings | No GPU servers to run. It only ever sees redacted, shortened page text, never passwords or cookies. If it's unavailable, built-in fallback plans keep scans working |
 | 🧱 **Vultr Firewall** | Lets in only web traffic (80/443) and SSH from our IP | A second wall in front of the VM's own firewall |
 
-**How a scan uses them** _(once the VM is deployed)_**:**
+**How a scan uses them** (live at https://78-141-194-157.sslip.io):
 
 1. You submit a URL to the API on the VM.
 2. Serverless Inference plans the tests.
@@ -454,9 +454,10 @@ curl -s -X POST http://localhost:8000/api/v1/scans \
 
 | Deployment fact | Value |
 |---|---|
-| Region | _filled in after deploy_ |
-| VM size | 4 vCPU / 8 GB recommended (each sandbox is capped at 1 CPU / 1 GB) |
-| Inference model | _the `VULTR_INFERENCE_MODEL` used in the demo, filled in after deploy_ |
+| Region | London, GB |
+| VM size | 4 vCPU / 8 GB, Ubuntu 24.04 (each sandbox is capped at 1 CPU / 1 GB) |
+| Inference model | `glm-5.3-flash` on Vultr Serverless Inference |
+| Live URL | https://78-141-194-157.sslip.io (HTTPS by Caddy; `sslip.io` maps the name to the VM's IP) |
 
 Step-by-step deployment: [docs/deploy-vultr.md](docs/deploy-vultr.md).
 
@@ -496,7 +497,6 @@ Full rules: [`SECURITY.md`](SECURITY.md) · controls: [`docs/containment-policy.
 
 Honest list, kept current. Anything here is **not** shown as working in the demo.
 
-- 🌐 **No public demo yet.** The Vultr VM isn't created, so the live demo URL is still to come.
 - 📄 **PDF report:** the API answers `501` for `format=pdf`. The web app saves the report as PDF through the browser's print dialog instead.
 - ✋ **Approvals are recorded only.** Approving a GitHub issue or a report records the decision; nothing is filed or sent yet.
 - 🧪 **QA checks:** `qa.search` judges only the HTTP status, so a 200 page saying "search is unavailable" is not reported. Live-browser detection tests for login, password reset and search run with `AGENTGUARD_LIVE_BROWSER=1`.
