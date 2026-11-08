@@ -229,12 +229,7 @@ class Orchestrator:
 
         await self._set_status(scan_id, ScanStatus.VERIFYING, "all tasks finished")
         confirmed, review = await self.s.verifier.verify(findings)
-        with self.s.session_factory() as db:
-            for f in review:
-                row = db.get(FindingRow, f.id)
-                if row is not None:
-                    row.needs_review = True
-            db.commit()
+        confirmed, review = await self._persist_verification(scan_id, findings, confirmed, review)
         score = compute_score(f.severity for f in confirmed)
         summary = await self.s.planner.summarize(confirmed)
 
@@ -265,6 +260,49 @@ class Orchestrator:
             recommendation=recommend(score).value,
             summary=summary[:4000],
         )
+
+    async def _persist_verification(
+        self,
+        scan_id: UUID,
+        findings: list[Finding],
+        confirmed: list[Finding],
+        review: list[Finding],
+    ) -> tuple[list[Finding], list[Finding]]:
+        """Store what the verifier decided (brief 6.7): confidence, ``verified``, adjusted
+        severity, merged evidence and the review flag. A finding the verifier merged into
+        another is deleted (its evidence lives on in the survivor) and audited. Anything the
+        verifier returns that this scan did not produce is ignored: it may not invent findings.
+        """
+        known = {f.id for f in findings}
+        confirmed = [f for f in confirmed if f.id in known]
+        review = [f for f in review if f.id in known and f.id not in {c.id for c in confirmed}]
+        decided = {f.id: (f, False) for f in confirmed} | {f.id: (f, True) for f in review}
+        merged = 0
+        with self.s.session_factory() as db:
+            for original in findings:
+                row = db.get(FindingRow, original.id)
+                if row is None:
+                    continue
+                if original.id not in decided:
+                    db.delete(row)
+                    merged += 1
+                    continue
+                f, needs_review = decided[original.id]
+                row.severity = f.severity
+                row.confidence = f.confidence
+                row.verified = f.verified
+                row.evidence = list(f.evidence)
+                row.reproduction = list(f.reproduction)
+                row.needs_review = needs_review
+            db.commit()
+        await self._audit(
+            scan_id,
+            "verify.done",
+            f"{len(confirmed)} confirmed",
+            f"{len(review)} need review, {merged} duplicate(s) merged",
+            actor=AuditActor.AGENT,
+        )
+        return confirmed, review
 
     async def _run_task(self, scan: Scan, task: PlanTask, done: int) -> SandboxResult:
         started = datetime.now(UTC)

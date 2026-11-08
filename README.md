@@ -106,7 +106,7 @@ Full details and how each control is tested: [docs/containment-policy.md](docs/c
 |---|:-:|:-:|:-:|:-:|
 | 🖥️ **Ayesha** | 0 | 0 | 10 | 0 |
 | 🔌 **Sohaib** | 9 | 2 | 1 | 0 |
-| 🧠 **Sarah** | 0 | 0 | 11 | 0 |
+| 🧠 **Sarah** | 0 | 10 | 0 | 1 |
 | 🛡️ **Arslan** | 13 | 0 | 0 | 3 |
 
 **Shared foundation:** ✅ project structure, Docker setup, shared data formats (`shared/contracts-py`, `frontend/src/api/contracts.ts`).
@@ -154,17 +154,17 @@ Full details and how each control is tested: [docs/containment-policy.md](docs/c
 
 | Task | Status |
 |---|:-:|
-| 📐 Plan schema + validator (whitelisted check ids, task caps per profile) | ⏳ |
-| 🛟 Deterministic fallback plan per profile | ⏳ |
-| ☁️ Vultr Serverless Inference client (timeout, retries, repair prompt) | ⏳ |
-| 🛡️ Prompt-injection defense (page text as untrusted data, redacted + truncated) | ⏳ |
-| 📝 `summarize(findings)` executive summary | ⏳ |
-| 🔍 Verifier: re-check, dedupe, confidence, "needs manual review" bucket | ⏳ |
-| 🧮 Scoring + release recommendation (pure functions + tests) | ⏳ |
-| 📈 False-positive eval (results table) | ⏳ |
-| 🤖 Media: AI section of README, slides 5 + 9 | ⏳ |
-| 🗣️ Media: Q&A prep (AI answers, merged with Arslan's) | ⏳ |
-| 🎙️ Media: video segment 1:55–2:30 | ⏳ |
+| 📐 Plan schema + validator (whitelisted check ids, task caps per profile) | 🟡 built + tested, branch `feat/agent-planner-verifier` (not merged) |
+| 🛟 Deterministic fallback plan per profile | 🟡 built + tested, branch `feat/agent-planner-verifier` (not merged) |
+| ☁️ Vultr Serverless Inference client (timeout, retries, repair prompt) | 🟡 same branch; tested with a scripted model, not yet against the live Vultr endpoint |
+| 🛡️ Prompt-injection defense (page text as untrusted data, redacted + truncated) | 🟡 built + tested, branch `feat/agent-planner-verifier` (not merged) |
+| 📝 `summarize(findings)` executive summary | 🟡 built + tested, branch `feat/agent-planner-verifier` (not merged) |
+| 🔍 Verifier: re-check, dedupe, confidence, "needs manual review" bucket | 🟡 same branch; orchestrator stores its results (CR-3) |
+| 🧮 Scoring + release recommendation (pure functions + tests) | 🟡 built + tested, branch `feat/agent-planner-verifier` (not merged) |
+| 📈 False-positive eval (results table) | 🟡 same branch; real checks vs demo store: 0 of 6 injected false alarms scored, 0 real findings lost |
+| 🤖 Media: AI section of README, slides 5 + 9 | 🟡 same branch (`docs/submission/sarah-media.md`) |
+| 🗣️ Media: Q&A prep (AI answers, merged with Arslan's) | 🟡 same branch |
+| 🎙️ Media: video segments 0:45–1:20 and 1:55–2:30 | ⛔ scripts written; recording needs the live demo + UI |
 
 </details>
 
@@ -368,6 +368,29 @@ cd frontend && bun run test && bun run lint && bun run format:check && bun run b
 
 ---
 
+## 🧠 The AI agents (planner + verifier)
+
+Two AI helpers sit around the real tests. Neither of them *finds* problems: the checks do that in a real browser. The AI decides **what to test** and **double-checks what was found**.
+
+| Agent | What it does | Safety rails |
+|---|---|---|
+| 🧭 **Planner** | Picks which of the 18 checks to run, in what order and on which pages, and writes the executive summary | Only whitelisted checks of the chosen profile, a task cap (Smoke 5, QA 12, Security 12, Full 20), only safe params (relative paths, at most 3 login attempts). One repair try, then a **built-in fallback plan**, so a scan never depends on the AI |
+| 🔍 **Verifier** | Re-checks every finding against the evidence the sandbox saved (screenshots, network records), merges duplicates, fixes severity to the guide and sets a confidence | Never visits the site itself (only the sandbox does). A claim the evidence doesn't back can't count toward the score; it goes to "needs manual review" |
+
+**🛡️ Prompt-injection defence.** Text from the website is treated as *data*, never as instructions. It's redacted (no tokens, cookies or passwords), stripped of hidden characters, cut to a fixed size and fenced off before the AI sees it. Even if a page tricks the model, the answer is validated: it can't add a check, a flag or an off-site URL.
+
+**📈 Does the verifier work?** We ran all 18 real checks against our demo store, then added 6 realistic false alarms (a crashed task, a page that was never tested, a duplicate from a retry...):
+
+| | Before the verifier | With the verifier |
+|---|:-:|:-:|
+| Real findings re-checked against evidence | 0 of 13 | **13 of 13** |
+| Real findings lost | 0 | **0** |
+| False alarms that reached the score | 6 of 6 | **0 of 6** |
+
+Method, labels and limits: [docs/agent-eval.md](docs/agent-eval.md) · Design: [docs/agent.md](docs/agent.md)
+
+---
+
 ## ☁️ How Vultr powers AgentGuard
 
 ![AgentGuard architecture](docs/architecture-diagram.png)
@@ -375,7 +398,7 @@ cd frontend && bun run test && bun run lint && bun run format:check && bun run b
 | Vultr service | What we use it for | Why Vultr |
 |---|---|---|
 | 🖥️ **Vultr Cloud Compute VM** (Ubuntu 24.04, Docker Compose) | Runs the website (Caddy, automatic HTTPS), the API, the background worker, PostgreSQL, Redis, **and every disposable sandbox**: one fresh Docker container per test, destroyed afterwards | We control the Docker engine and the host firewall, so each sandbox can be cut off from private networks and the cloud metadata service at the network level |
-| 🧠 **Vultr Serverless Inference** (OpenAI-compatible API) | Writes the test plan for each scan and the executive summary | No GPU servers to run. It only ever sees redacted, shortened page text, never passwords or cookies. If it's unavailable, built-in fallback plans keep scans working |
+| 🧠 **Vultr Serverless Inference** (OpenAI-compatible API) | Writes the test plan for each scan, the executive summary, and a second opinion on borderline findings | No GPU servers to run. It only ever sees redacted, shortened page text, never passwords or cookies. If it's unavailable, built-in fallback plans keep scans working |
 | 🧱 **Vultr Firewall** | Lets in only web traffic (80/443) and SSH from our IP | A second wall in front of the VM's own firewall |
 
 **How a scan uses them:**
@@ -460,6 +483,8 @@ Another copy is still running. Close the old terminal, or start on another port:
 | 🧭 [`SETUP_GUIDE.md`](SETUP_GUIDE.md) | Team setup with Claude in 5 minutes |
 | 📦 [`sandbox-worker/README.md`](sandbox-worker/README.md) | How to write a new check |
 | 🤝 [`docs/contracts/`](docs/contracts/) | Shared data formats and open questions |
+| 🧠 [`docs/agent.md`](docs/agent.md) | AI planner, verifier and scoring: rules and design |
+| 📈 [`docs/agent-eval.md`](docs/agent-eval.md) | Verifier false-positive eval on real check output |
 
 ---
 
