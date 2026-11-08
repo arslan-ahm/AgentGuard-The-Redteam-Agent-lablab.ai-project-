@@ -108,7 +108,7 @@ Full details and how each control is tested: [docs/containment-policy.md](docs/c
 
 | | ✅ | 🟡 | ⏳ | ⛔ |
 |---|:-:|:-:|:-:|:-:|
-| 🖥️ **Ayesha** | 8 | 0 | 2 | 0 |
+| 🖥️ **Ayesha** | 8 | 2 | 0 | 0 |
 | 🔌 **Sohaib** | 9 | 2 | 1 | 0 |
 | 🧠 **Sarah** | 10 | 0 | 0 | 1 |
 | 🛡️ **Arslan** | 13 | 0 | 0 | 3 |
@@ -122,14 +122,14 @@ Full details and how each control is tested: [docs/containment-policy.md](docs/c
 |---|:-:|
 | 🧭 App scaffold, routes, API client + mock data | ✅ merged (#25); tested in mock mode and against the local backend |
 | 🔐 Login page | ✅ merged (#25); tested in mock mode and against the local backend |
-| 📊 Dashboard (scan list + scores) and new-scan form (URL, profile, authorization checkbox) | ✅ merged (#25); tested in mock mode and against the local backend; attestation not stored by the API yet (CR-4) |
+| 📊 Dashboard (scan list + scores) and new-scan form (URL, profile, authorization checkbox) | ✅ merged (#25); tested in mock mode and against the local backend; attestation now sent and audited (CR-4, branch `feat/api-attestation`, done by Arslan) |
 | 📡 Live progress view (SSE): planning → sandbox → tests → **red "Blocked by policy"** + sandbox destroyed | ✅ merged (#25); tested in mock mode and against the local backend (fake sandbox) |
 | 🧾 Findings list, severity badges, evidence viewer (screenshot, network summary, repro) | ✅ merged (#25); tested in mock mode and against the local backend; evidence viewer checked with mock files only |
 | ✋ Approval dialog (GitHub issue / send report) | ✅ merged (#25); tested in mock mode and against the local backend; records the decision only, like the API |
 | 📄 Report page, Markdown + PDF export, decision banner | ✅ merged (#25); tested in mock mode and against the local backend; PDF via the browser's print dialog |
 | 🐙 GitHub issue body template | ✅ merged (#25); tested in mock mode and against the local backend |
-| 🎬 Media: deck design (12 slides), video lead + edit, screenshots, logo | ⏳ |
-| 📘 Media: final README pass from a clean clone, submission text | ⏳ |
+| 🎬 Media: deck design (12 slides), video lead + edit, screenshots, logo | 🟡 deck + PDF done (`docs/submission/AgentGuard-deck.pdf`, branch `docs/pitch-deck`, done by Arslan; UI shots use demo data); video pending |
+| 📘 Media: final README pass from a clean clone, submission text | 🟡 Quick start fixed (SECRET_KEY, database, login, Docker for real scans), branch `feat/api-attestation`, done by Arslan; commands checked, full clean-clone run not done |
 
 </details>
 
@@ -148,7 +148,7 @@ Full details and how each control is tested: [docs/containment-policy.md](docs/c
 | 🧪 QA checks: pages_load, console_network_errors, links_assets, forms | ✅ merged (#14); run in real Chromium against the demo store |
 | 🧪 QA checks: login, password_reset, search, checkout, accessibility | 🟡 merged (#14); login, password_reset and search have no real detection test yet |
 | 🛒 Flawed demo store (`scripts/demo-store/`) | ✅ merged (#15); not deployed (needs a public hostname for a real scan) |
-| 📝 Media: API overview + curl examples (README), slide 10 data | 🟡 draft in `docs/submission/sohaib-media.md`; checked against a local API, not the deployed one |
+| 📝 Media: API overview + curl examples (README), slide 10 data | 🟡 README "API overview" added (branch `feat/api-attestation`, done by Arslan); checked against the test suite, not a deployed API |
 | 🗣️ Media: video segment | ⏳ |
 
 </details>
@@ -226,11 +226,17 @@ git config core.hooksPath .githooks       # 🔒 turns on the "no commits to mai
 ### 3. ▶️ Run it
 
 ```bash
+cp deploy/dotenv.example .env             # settings file (never commit it)
+# open .env and set SECRET_KEY (make one with the command under "Settings" below)
 cd backend
 uv sync                                   # installs everything
+uv run alembic upgrade head               # creates the local database (SQLite file)
+uv run python -m app.db.seed you@example.com "choose-a-password"   # your login (8+ characters)
 uv run uvicorn app.main:app --reload      # starts the server
 ```
 👉 Open **http://localhost:8000/docs** to see every API endpoint and try it.
+
+> 🧪 **Real scans need Docker.** Build the sandbox image once from the repo root: `docker build -f sandbox-worker/Dockerfile -t agentguard-sandbox:local .`. No Docker? Set `AGENTGUARD_USE_FAKES=1` before starting the server to use the fake planner and sandbox (canned results, for trying the UI). The target must be a public `http(s)` site you're allowed to test: `localhost` and private addresses are refused by design.
 
 Then start the website in a second terminal:
 
@@ -252,7 +258,9 @@ docker compose --profile build-only build sandbox   # builds the safety-box imag
 docker compose up --build                           # starts everything
 ```
 
-This starts 6 parts together: the web app (a placeholder for now), backend, background worker, database (PostgreSQL), queue (Redis) and the locked-down Docker proxy the worker uses to start safety boxes. Putting it on a real server (Vultr): [docs/deploy-vultr.md](docs/deploy-vultr.md).
+Then create your login: `docker compose exec backend python -m app.db.seed you@example.com "choose-a-password"`, and open **http://localhost**.
+
+This starts 6 parts together: the web app, backend, background worker, database (PostgreSQL), queue (Redis) and the locked-down Docker proxy the worker uses to start safety boxes. Putting it on a real server (Vultr): [docs/deploy-vultr.md](docs/deploy-vultr.md).
 </details>
 
 <details>
@@ -396,6 +404,36 @@ Method, labels and limits: [docs/agent-eval.md](docs/agent-eval.md) · Design: [
 
 ---
 
+## 🔌 API overview
+
+Base path `/api/v1`, JSON, bearer-token auth. Interactive docs at `/docs` on the backend. Errors always look like `{"error": {"code": "...", "message": "..."}}`.
+
+| Method | Path | Purpose |
+|---|---|---|
+| POST | `/auth/login` | Log in: `{email, password}` → `{access_token, token_type, expires_in}` |
+| POST | `/scans` | Start a scan: `{target_url, profile, authorized: true}` → `{id, status}`. Header `X-AgentGuard-Demo: containment` adds the containment demo task |
+| GET | `/scans` · `/scans/{id}` | List scans · one scan's status, progress, score and verdict |
+| GET | `/scans/{id}/events` | Live progress and audit events (server-sent events) |
+| GET | `/scans/{id}/findings` | Verified findings |
+| GET | `/scans/{id}/evidence/{name}` | One evidence file (screenshot, network summary) |
+| GET | `/scans/{id}/report?format=json\|md` | The report (PDF isn't built yet: `501`) |
+| POST | `/scans/{id}/approvals` | Record a human decision: `{action: "github_issue"\|"send_report", approved}` |
+| GET | `/scans/{id}/audit` | The tamper-evident audit log |
+
+`authorized: true` is the user's statement that they own the site or may test it; it's written to the audit log (CR-4). A blocked target answers `403 target_blocked`, too many scans `429` with `Retry-After`.
+
+```bash
+TOKEN=$(curl -s -X POST http://localhost:8000/api/v1/auth/login -H "Content-Type: application/json" \
+  -d '{"email": "you@example.com", "password": "..."}' | jq -r .access_token)
+
+curl -s -X POST http://localhost:8000/api/v1/scans \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"target_url": "https://your-site.example", "profile": "full", "authorized": true}'
+# {"id": "3f0c...", "status": "queued"}
+```
+
+---
+
 ## ☁️ How Vultr powers AgentGuard
 
 ![AgentGuard architecture](docs/architecture-diagram.png)
@@ -461,7 +499,6 @@ Honest list, kept current. Anything here is **not** shown as working in the demo
 - 🌐 **No public demo yet.** The Vultr VM isn't created, so the live demo URL is still to come.
 - 📄 **PDF report:** the API answers `501` for `format=pdf`. The web app saves the report as PDF through the browser's print dialog instead.
 - ✋ **Approvals are recorded only.** Approving a GitHub issue or a report records the decision; nothing is filed or sent yet.
-- 🙋 **Authorization attestation:** the form requires it, but the API doesn't store it yet ([CR-4](docs/change-requests/CR-4-authorization-attestation.md), pending).
 - 🧪 **QA checks:** login, password reset and search have no real detection test yet.
 - ☁️ **Vultr Serverless Inference:** the client is tested with a scripted model, not yet against the live endpoint. If the model fails, the deterministic fallback plan is used.
 

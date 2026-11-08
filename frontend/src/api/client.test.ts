@@ -20,7 +20,11 @@ describe('createApiClient', () => {
       fetchImpl: fakeFetch(202, { id: 'abc', status: 'queued' }, calls),
       getToken: () => 'tok',
     })
-    const created = await client.createScan({ target_url: 'https://x.test', profile: 'full' })
+    const created = await client.createScan({
+      target_url: 'https://x.test',
+      profile: 'full',
+      authorized: true,
+    })
 
     expect(created).toEqual({ id: 'abc', status: 'queued' })
     expect(calls[0].url).toBe('/api/v1/scans')
@@ -28,6 +32,7 @@ describe('createApiClient', () => {
     expect(JSON.parse(String(calls[0].init.body))).toEqual({
       target_url: 'https://x.test',
       profile: 'full',
+      authorized: true,
     })
     const headers = calls[0].init.headers as Record<string, string>
     expect(headers.Authorization).toBe('Bearer tok')
@@ -68,9 +73,9 @@ describe('createApiClient', () => {
     const client = createApiClient({
       fetchImpl: fakeFetch(202, { id: 'a', status: 'queued' }, calls),
     })
-    await client.createScan({ target_url: 'https://x.test', profile: 'smoke' })
+    await client.createScan({ target_url: 'https://x.test', profile: 'smoke', authorized: true })
     await client.createScan(
-      { target_url: 'https://x.test', profile: 'full' },
+      { target_url: 'https://x.test', profile: 'full', authorized: true },
       { containmentDemo: true },
     )
     const first = calls[0].init.headers as Record<string, string>

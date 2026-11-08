@@ -36,7 +36,11 @@ describe('createMockClient', () => {
   it('blocks private targets with 403 target_blocked and records a blocked audit event', async () => {
     const client = createMockClient({ stepMs: 1 })
     await expect(
-      client.createScan({ target_url: 'http://169.254.169.254/', profile: 'security' }),
+      client.createScan({
+        target_url: 'http://169.254.169.254/',
+        profile: 'security',
+        authorized: true,
+      }),
     ).rejects.toMatchObject({ status: 403, code: 'target_blocked' })
     const blocked = (await client.listScans()).find((s) => s.target_url.includes('169.254'))
     expect(blocked?.status).toBe('blocked')
@@ -45,7 +49,7 @@ describe('createMockClient', () => {
   it('runs a scan to awaiting_approval and streams the containment block', async () => {
     const client = createMockClient({ stepMs: 2, seed: false })
     const { id } = await client.createScan(
-      { target_url: 'https://shop.example.com', profile: 'full' },
+      { target_url: 'https://shop.example.com', profile: 'full', authorized: true },
       { containmentDemo: true },
     )
     const audit: AuditEvent[] = []

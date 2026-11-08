@@ -9,7 +9,7 @@ Base path `/api/v1`, JSON, bearer-token auth. Errors always look like `{"error":
 | Method | Path | Purpose |
 |---|---|---|
 | POST | `/auth/login` | Log in, returns a bearer token |
-| POST | `/scans` | Create a scan: `{target_url, profile, credentials_ref?}` returns `{id, status}` |
+| POST | `/scans` | Create a scan: `{target_url, profile, authorized: true, credentials_ref?}` returns `{id, status}` |
 | GET | `/scans` | List scans |
 | GET | `/scans/{id}` | Status, progress, score, recommendation |
 | GET | `/scans/{id}/events` | Server-sent events: progress and audit events |
@@ -37,7 +37,7 @@ Rate limits: scans per user and per target host return `429` with `Retry-After`;
 ```bash
 curl -s -X POST "$AGENTGUARD_URL/api/v1/scans" \
   -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
-  -d '{"target_url": "https://demo.example.com", "profile": "full"}'
+  -d '{"target_url": "https://demo.example.com", "profile": "full", "authorized": true}'
 # {"id": "3f0c...", "status": "queued"}
 ```
 

@@ -68,6 +68,8 @@ def test_unknown_scan_is_404_in_error_shape(
         {"target_url": "https://example.com", "profile": "deep"},
         {"profile": "smoke"},
         {"target_url": "https://example.com", "profile": "smoke", "extra": 1},
+        {"target_url": "https://example.com", "profile": "smoke"},  # no attestation (CR-4)
+        {"target_url": "https://example.com", "profile": "smoke", "authorized": False},
     ],
 )
 def test_create_scan_rejects_bad_body_with_error_shape(

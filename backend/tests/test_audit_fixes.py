@@ -172,7 +172,7 @@ def test_api_without_services_answers_503_not_a_crash() -> None:
 def test_approving_a_scan_audits_the_status_change(client: TestClient) -> None:
     """awaiting_approval -> completed used to leave no scan.status event."""
     auth = login(client)
-    body = {"target_url": "https://shop.example.com", "profile": "smoke"}
+    body = {"target_url": "https://shop.example.com", "profile": "smoke", "authorized": True}
     scan_id = client.post("/api/v1/scans", json=body, headers=auth).json()["id"]
     for _ in range(100):
         if client.get(f"/api/v1/scans/{scan_id}", headers=auth).json()["status"] == (
