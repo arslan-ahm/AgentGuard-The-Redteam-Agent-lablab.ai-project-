@@ -12,6 +12,7 @@
 ![Python](https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white)
 ![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
 ![Docker](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white)
+![License: MIT](https://img.shields.io/badge/license-MIT-green)
 
 [🤔 What is it](#-what-is-agentguard) · [⚙️ How it works](#️-how-it-works) · [🚦 Status](#-project-status) · [🚀 Quick start](#-quick-start) · [👥 Team](#-team--who-owns-what) · [📖 Glossary](#-glossary-new-to-these-words)
 
@@ -31,7 +32,7 @@ Imagine hiring a careful tester who:
 AgentGuard is that tester, built with AI. 🤖
 
 > [!NOTE]
-> 🚧 **Today it runs through the API** (`/docs`). The web app is being built, and approvals are recorded but nothing is sent anywhere yet.
+> 🚧 **Runs locally today:** the API (`/docs`) and the web app (`frontend/`). The public demo isn't deployed yet, and approvals are recorded but nothing is sent anywhere yet.
 
 > [!IMPORTANT]
 > 🙅 AgentGuard is **not a hacking tool**. It runs only **safe, harmless checks**, and only on websites **you own or have permission to test**.
@@ -107,7 +108,7 @@ Full details and how each control is tested: [docs/containment-policy.md](docs/c
 
 | | ✅ | 🟡 | ⏳ | ⛔ |
 |---|:-:|:-:|:-:|:-:|
-| 🖥️ **Ayesha** | 0 | 8 | 2 | 0 |
+| 🖥️ **Ayesha** | 8 | 0 | 2 | 0 |
 | 🔌 **Sohaib** | 9 | 2 | 1 | 0 |
 | 🧠 **Sarah** | 10 | 0 | 0 | 1 |
 | 🛡️ **Arslan** | 13 | 0 | 0 | 3 |
@@ -119,14 +120,14 @@ Full details and how each control is tested: [docs/containment-policy.md](docs/c
 
 | Task | Status |
 |---|:-:|
-| 🧭 App scaffold, routes, API client + mock data | 🟡 built on `feat/web-scaffold`, not merged yet; tested in mock mode and against the local backend |
-| 🔐 Login page | 🟡 built on `feat/web-scaffold`, not merged yet; tested in mock mode and against the local backend |
-| 📊 Dashboard (scan list + scores) and new-scan form (URL, profile, authorization checkbox) | 🟡 built on `feat/web-scaffold`, not merged yet; tested in mock mode and against the local backend; attestation not stored by the API yet (CR-4) |
-| 📡 Live progress view (SSE): planning → sandbox → tests → **red "Blocked by policy"** + sandbox destroyed | 🟡 built on `feat/web-scaffold`, not merged yet; tested in mock mode and against the local backend (fake sandbox) |
-| 🧾 Findings list, severity badges, evidence viewer (screenshot, network summary, repro) | 🟡 built on `feat/web-scaffold`, not merged yet; tested in mock mode and against the local backend; evidence viewer checked with mock files only |
-| ✋ Approval dialog (GitHub issue / send report) | 🟡 built on `feat/web-scaffold`, not merged yet; tested in mock mode and against the local backend; records the decision only, like the API |
-| 📄 Report page, Markdown + PDF export, decision banner | 🟡 built on `feat/web-scaffold`, not merged yet; tested in mock mode and against the local backend; PDF via the browser's print dialog |
-| 🐙 GitHub issue body template | 🟡 built on `feat/web-scaffold`, not merged yet; tested in mock mode and against the local backend |
+| 🧭 App scaffold, routes, API client + mock data | ✅ merged (#25); tested in mock mode and against the local backend |
+| 🔐 Login page | ✅ merged (#25); tested in mock mode and against the local backend |
+| 📊 Dashboard (scan list + scores) and new-scan form (URL, profile, authorization checkbox) | ✅ merged (#25); tested in mock mode and against the local backend; attestation not stored by the API yet (CR-4) |
+| 📡 Live progress view (SSE): planning → sandbox → tests → **red "Blocked by policy"** + sandbox destroyed | ✅ merged (#25); tested in mock mode and against the local backend (fake sandbox) |
+| 🧾 Findings list, severity badges, evidence viewer (screenshot, network summary, repro) | ✅ merged (#25); tested in mock mode and against the local backend; evidence viewer checked with mock files only |
+| ✋ Approval dialog (GitHub issue / send report) | ✅ merged (#25); tested in mock mode and against the local backend; records the decision only, like the API |
+| 📄 Report page, Markdown + PDF export, decision banner | ✅ merged (#25); tested in mock mode and against the local backend; PDF via the browser's print dialog |
+| 🐙 GitHub issue body template | ✅ merged (#25); tested in mock mode and against the local backend |
 | 🎬 Media: deck design (12 slides), video lead + edit, screenshots, logo | ⏳ |
 | 📘 Media: final README pass from a clean clone, submission text | ⏳ |
 
@@ -230,6 +231,16 @@ uv sync                                   # installs everything
 uv run uvicorn app.main:app --reload      # starts the server
 ```
 👉 Open **http://localhost:8000/docs** to see every API endpoint and try it.
+
+Then start the website in a second terminal:
+
+```bash
+cd frontend
+bun install
+bun run dev          # uses the API on http://localhost:8000
+# or: bun run dev:mock   # no backend needed: sample data, any email + password signs in
+```
+👉 Open **http://localhost:5173**. Mock mode shows a **Mock data** tag in the header; its sample data is not real scan output.
 
 <details>
 <summary>🐳 <b>Run everything with Docker instead</b> (click to open)</summary>
@@ -410,6 +421,55 @@ Method, labels and limits: [docs/agent-eval.md](docs/agent-eval.md) · Design: [
 | Inference model | _the `VULTR_INFERENCE_MODEL` used in the demo, filled in after deploy_ |
 
 Step-by-step deployment: [docs/deploy-vultr.md](docs/deploy-vultr.md).
+
+---
+
+## ⚖️ Security testing ethics and scope
+
+AgentGuard is a **testing tool for your own sites**, not an attack tool.
+
+| ✅ In scope | ❌ Out of scope |
+|---|---|
+| Sites you own or have written permission to test | Anyone else's site |
+| Safe, read-only checks: page loads, forms, links, headers, cookies, error leaks | Exploitation, data changes, brute force, denial of service |
+| Clearly marked, bounded probes (`agentguard-probe-<id>`) | Scanning private networks, localhost or cloud metadata (blocked by policy) |
+| Human approval before anything leaves AgentGuard | Sending reports or filing issues automatically |
+
+- 🙋 The new-scan form requires you to confirm you're authorized to test the site.
+- 🚦 Rate limits: 10 scans per user and 6 per target host per hour.
+- 🧯 Any attempt to reach a private address is blocked, logged and the sandbox destroyed.
+
+Full rules: [`SECURITY.md`](SECURITY.md) · controls: [`docs/containment-policy.md`](docs/containment-policy.md).
+
+---
+
+## 👥 Team contributions
+
+| 👤 Person | 🛠️ What they built |
+|---|---|
+| **Ayesha** | Web app (dashboard, new scan, live progress with the containment alert, findings, evidence viewer, approval dialog, report page and exports), GitHub issue template, submission media |
+| **Sohaib** | API and orchestrator (scans, findings, evidence, reports, SSE, approvals), database models, QA checks, the flawed demo store |
+| **Sarah** | AI planner and verifier, scoring and release decision, prompt-injection defense, false-positive eval (built with Arslan in PR #22) |
+| **Arslan** | Sandbox launcher and runner, network guard and egress firewall, URL policy, audit log, redaction, rate limits, security checks, Vultr deployment, architecture diagram |
+
+---
+
+## ⚠️ Known limitations
+
+Honest list, kept current. Anything here is **not** shown as working in the demo.
+
+- 🌐 **No public demo yet.** The Vultr VM isn't created, so the live demo URL is still to come.
+- 📄 **PDF report:** the API answers `501` for `format=pdf`. The web app saves the report as PDF through the browser's print dialog instead.
+- ✋ **Approvals are recorded only.** Approving a GitHub issue or a report records the decision; nothing is filed or sent yet.
+- 🙋 **Authorization attestation:** the form requires it, but the API doesn't store it yet ([CR-4](docs/change-requests/CR-4-authorization-attestation.md), pending).
+- 🧪 **QA checks:** login, password reset and search have no real detection test yet.
+- ☁️ **Vultr Serverless Inference:** the client is tested with a scripted model, not yet against the live endpoint. If the model fails, the deterministic fallback plan is used.
+
+---
+
+## 📄 License
+
+[MIT](LICENSE) © 2026 the AgentGuard team.
 
 ---
 
