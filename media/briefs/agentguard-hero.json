@@ -1,0 +1,13 @@
+{
+  "template": "product_hero",
+  "name": "agentguard-hero",
+  "headline": "Ship without the surprises",
+  "subheadline": "AI-planned QA and security tests in a real browser, each in its own disposable sandbox.",
+  "benefits": ["Real Playwright runs", "Evidence for every finding", "Containment first"],
+  "cta": "See the demo",
+  "product_image": "docs/architecture-diagram.png",
+  "product_alt": "AgentGuard architecture on a Vultr VM",
+  "background": "",
+  "visual_style": "dark security, deep navy, single blue accent, studio-clean",
+  "exports": ["1920x1080", "1080x1080", "1080x1350", "1200x628"]
+}
