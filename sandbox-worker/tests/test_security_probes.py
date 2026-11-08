@@ -71,7 +71,7 @@ class Api:
             raise handler
         if callable(handler):
             return handler(url, form)  # type: ignore[no-any-return]
-        return handler  # type: ignore[no-any-return]
+        return handler
 
     async def get(self, url: str, max_redirects: int, timeout: int) -> Resp:  # noqa: ASYNC109
         self.calls.append(("GET", url, None, max_redirects))
@@ -545,7 +545,7 @@ async def test_login_limited_on_third_attempt(tmp_path: Path) -> None:
         [  # sign-up form: two password fields
             {
                 **LOGIN_FORM,
-                "inputs": [*LOGIN_FORM["inputs"], {"name": "confirm", "type": "password"}],  # type: ignore[list-item]
+                "inputs": [*LOGIN_FORM["inputs"], {"name": "confirm", "type": "password"}],
             }
         ],
         [{**LOGIN_FORM, "inputs": [{"name": "password", "type": "password"}]}],
