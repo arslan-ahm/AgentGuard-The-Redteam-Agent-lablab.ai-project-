@@ -1,0 +1,453 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>AgentGuard pitch deck</title>
+<meta name="viewport" content="width=1920">
+<style>
+  @font-face { font-family: "Space Grotesk"; src: url("fonts/space-grotesk-latin-wght-normal.woff2") format("woff2"); font-weight: 300 700; font-display: block; }
+  @font-face { font-family: "JetBrains Mono"; src: url("fonts/jetbrains-mono-latin-wght-normal.woff2") format("woff2"); font-weight: 100 800; font-display: block; }
+
+  /* Tokens match frontend/src/index.css (dark theme) */
+  :root {
+    --canvas: #0b0e14; --panel: #12161f; --raised: #1a1f2b; --line: #232a38; --line-strong: #66728a;
+    --fg: #e6eaf2; --muted: #8b95a7; --accent: #2dd4e8; --accent-soft: #0b2a31; --on-accent: #04131a;
+    --bad: #f87171; --bad-soft: #3a1820; --warn: #f5a524; --warn-soft: #33240a; --ok: #34d399; --ok-soft: #0b2e24;
+    --sans: "Space Grotesk", system-ui, sans-serif; --mono: "JetBrains Mono", ui-monospace, monospace;
+  }
+  @page { size: 1920px 1080px; margin: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--canvas); }
+  body { font-family: var(--sans); color: var(--fg); -webkit-font-smoothing: antialiased; }
+
+  .slide {
+    position: relative; width: 1920px; height: 1080px; overflow: hidden;
+    padding: 96px 112px 120px; background: var(--canvas);
+    break-after: page; page-break-after: always;
+    display: flex; flex-direction: column;
+  }
+  .slide:last-child { break-after: auto; page-break-after: auto; }
+  /* faint grid, same idea as the app background */
+  .slide::before {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background-image: linear-gradient(rgba(102,114,138,.07) 1px, transparent 1px), linear-gradient(90deg, rgba(102,114,138,.07) 1px, transparent 1px);
+    background-size: 64px 64px;
+    mask-image: radial-gradient(ellipse at 30% 20%, #000 0%, transparent 75%);
+  }
+  .slide > * { position: relative; }
+
+  .foot {
+    position: absolute; left: 112px; right: 112px; bottom: 44px;
+    display: flex; justify-content: space-between; align-items: center;
+    font-family: var(--mono); font-size: 20px; color: var(--muted);
+  }
+  .brand { display: inline-flex; align-items: center; gap: 12px; font-family: var(--sans); font-weight: 600; font-size: 22px; color: var(--fg); }
+  .brand svg { width: 28px; height: 28px; color: var(--accent); }
+  .demo-note { font-family: var(--mono); font-size: 20px; color: var(--muted); }
+
+  svg.i { width: 1em; height: 1em; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+
+  h1 { font-size: 84px; line-height: 1.04; letter-spacing: -0.03em; font-weight: 600; }
+  h2 { font-size: 72px; line-height: 1.08; letter-spacing: -0.025em; font-weight: 600; max-width: 1696px; }
+  .wrap.fill { flex: 1; align-items: center; align-content: center; margin-top: 24px !important; padding-bottom: 24px; }
+  .lead { font-size: 32px; line-height: 1.45; color: #c3cad6; max-width: 1100px; }
+  .accent { color: var(--accent); }
+  .mono { font-family: var(--mono); }
+
+  .shot { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--panel);
+          box-shadow: 0 30px 80px rgba(0,0,0,.45), 0 0 0 1px rgba(255,255,255,.02) inset; }
+  .shot img { display: block; width: 100%; height: auto; }
+  .cap { font-size: 22px; color: var(--muted); margin-top: 16px; }
+
+  ul.ticks { list-style: none; display: grid; gap: 22px; }
+  ul.ticks li { display: grid; grid-template-columns: 36px 1fr; gap: 16px; font-size: 30px; line-height: 1.35; }
+  ul.ticks li svg { width: 32px; height: 32px; color: var(--accent); margin-top: 3px; }
+
+  .tag { display: inline-flex; align-items: center; gap: 10px; font-family: var(--mono); font-size: 20px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+  .tag.warn { color: var(--warn); }
+
+  /* ---------- slide 1 ---------- */
+  .s1 { padding-right: 0; }
+  .s1 .wrap { display: grid; grid-template-columns: 900px 1fr; gap: 72px; height: 100%; align-items: center; }
+  .s1 .logo { display: flex; align-items: center; gap: 18px; font-size: 40px; font-weight: 600; margin-bottom: 56px; }
+  .s1 .logo svg { width: 64px; height: 64px; color: var(--accent); }
+  .s1 .lead { margin-top: 36px; font-size: 32px; }
+  .s1 .team { margin-top: 64px; font-size: 26px; color: var(--muted); }
+  .s1 .team b { color: var(--fg); font-weight: 500; }
+  .s1 .right { align-self: center; margin-right: -220px; }
+
+  /* ---------- slide 2 ---------- */
+  .pains { margin-top: 72px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 28px; }
+  .pain { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 40px 36px 44px; }
+  .pain svg { width: 56px; height: 56px; color: var(--accent); }
+  .pain h3 { font-size: 34px; font-weight: 600; margin-top: 32px; line-height: 1.15; }
+  .pain p { font-size: 27px; color: var(--muted); margin-top: 16px; line-height: 1.4; }
+  .s2 .bottom { margin-top: auto; font-size: 34px; line-height: 1.4; max-width: 1400px; }
+  .s2 .bottom b { color: var(--accent); font-weight: 600; }
+
+  /* ---------- slide 3 ---------- */
+  .flow { margin-top: auto; margin-bottom: auto; display: grid; grid-template-columns: 1fr 120px 1fr; align-items: center; }
+  .flow .arrow { display: flex; justify-content: center; color: var(--accent); }
+  .flow .arrow svg { width: 72px; height: 72px; stroke-width: 1.5; }
+  .flow .step { font-size: 28px; margin-top: 24px; line-height: 1.35; }
+  .flow .step .n { font-family: var(--mono); color: var(--accent); margin-right: 10px; }
+  
+
+  /* ---------- slide 4 ---------- */
+  .s4 .wrap { margin-top: 56px; display: grid; grid-template-columns: 1040px 1fr; gap: 72px; align-items: start; }
+  .verdicts { display: grid; gap: 22px; }
+  .verdict { display: grid; grid-template-columns: 1fr auto; align-items: center; padding: 28px 32px; border-radius: 12px; border: 1px solid; font-size: 34px; font-weight: 600; }
+  .verdict .r { font-family: var(--mono); font-size: 26px; font-weight: 500; }
+  .v-bad { color: var(--bad); background: var(--bad-soft); border-color: rgba(248,113,113,.35); }
+  .v-warn { color: var(--warn); background: var(--warn-soft); border-color: rgba(245,165,36,.35); }
+  .v-ok { color: var(--ok); background: var(--ok-soft); border-color: rgba(52,211,153,.35); }
+  .rule { margin-top: 36px; font-size: 26px; line-height: 1.5; color: #c3cad6; }
+  .rule .mono { font-size: 26px; color: var(--fg); display: block; }
+
+  /* ---------- slide 5 ---------- */
+  .pipe { margin-top: 80px; display: grid; grid-template-columns: repeat(6, 1fr); gap: 0; }
+  .node { position: relative; padding: 0 14px; }
+  .node .dot { width: 96px; height: 96px; border-radius: 50%; border: 2px solid var(--line-strong); background: var(--panel); display: grid; place-items: center; }
+  .node .dot svg { width: 44px; height: 44px; color: var(--fg); }
+  .node.ai .dot { border-color: var(--accent); background: var(--accent-soft); }
+  .node.ai .dot svg { color: var(--accent); }
+  .node:not(:last-child)::after { content: ""; position: absolute; top: 48px; left: 124px; right: 6px; height: 2px; background: var(--line-strong); }
+  .node h3 { font-size: 30px; font-weight: 600; margin-top: 28px; line-height: 1.2; }
+  .node p { font-size: 22px; color: var(--muted); margin-top: 10px; line-height: 1.35; }
+  .node .ai-tag { font-family: var(--mono); font-size: 18px; color: var(--accent); letter-spacing: .08em; margin-top: 12px; display: block; }
+  .s5 .pipe { margin-top: auto; } .s5 ul.ticks { margin-top: auto; margin-bottom: 24px; }
+
+  /* ---------- slide 6 ---------- */
+  .s6 { padding-top: 72px; }
+  .s6 .wrap { margin-top: 36px; display: grid; grid-template-columns: 1240px 1fr; gap: 56px; align-items: start; }
+  .s6 ul.ticks li { font-size: 28px; }
+  .status { margin-top: 36px; padding: 22px 26px; border-radius: 12px; border: 1px dashed rgba(245,165,36,.5); background: rgba(51,36,10,.5); font-size: 23px; line-height: 1.45; color: #e9d9b8; }
+  .status b { color: var(--warn); font-weight: 600; }
+
+  /* ---------- slide 7 ---------- */
+  .tiles { margin-top: 64px; display: grid; grid-template-columns: 1.25fr 1fr 1fr; gap: 28px; }
+  .tile { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 44px 40px; }
+  .tile.main { background: linear-gradient(160deg, #0f2a33 0%, var(--panel) 60%); border-color: rgba(45,212,232,.35); }
+  .tile svg { width: 56px; height: 56px; color: var(--accent); }
+  .tile h3 { font-size: 36px; font-weight: 600; margin-top: 28px; }
+  .tile p { font-size: 29px; line-height: 1.45; color: #c3cad6; margin-top: 18px; }
+  .s7 .tiles { margin-top: auto; } .s7 .status { margin-top: 48px; margin-bottom: auto; font-size: 27px; }
+
+  /* ---------- slide 8 ---------- */
+  .s8 .wrap { margin-top: 40px; display: grid; grid-template-columns: 1fr; gap: 40px; }
+  .s8 .shot { width: 1340px; }
+  .s8 .cap { margin-top: 12px; }
+  .s8 ul.ticks { grid-template-columns: 1fr 1fr 1fr; gap: 24px 40px; }
+  .s8 ul.ticks li { font-size: 26px; }
+  .s12 .wrap.fill, .s11 .wrap.fill { align-items: start; }
+
+  /* ---------- slide 9 ---------- */
+  .s9 .wrap { margin-top: 56px; display: grid; grid-template-columns: 1000px 1fr; gap: 72px; align-items: start; }
+  table.eval { width: 100%; border-collapse: separate; border-spacing: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; font-size: 28px; }
+  table.eval th, table.eval td { padding: 26px 30px; text-align: left; border-bottom: 1px solid var(--line); line-height: 1.3; }
+  table.eval tr:last-child td { border-bottom: 0; }
+  table.eval th { font-family: var(--mono); font-size: 20px; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); background: var(--raised); }
+  table.eval td.num { font-family: var(--mono); text-align: center; white-space: nowrap; }
+  table.eval th.num { text-align: center; }
+  table.eval td.win { color: var(--accent); font-weight: 700; }
+  .s9 .foot-note { margin-top: 22px; font-size: 22px; color: var(--muted); }
+  .s9 ul.ticks li { font-size: 27px; }
+
+  /* ---------- slide 10 ---------- */
+  .s10 .wrap { margin-top: 56px; display: grid; grid-template-columns: 1fr 470px; gap: 64px; align-items: start; }
+  .carries { display: grid; gap: 18px; }
+  .carry { display: grid; grid-template-columns: 56px 1fr; gap: 18px; align-items: start; padding: 22px 24px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
+  .carry svg { width: 40px; height: 40px; color: var(--accent); margin-top: 2px; }
+  .carry b { display: block; font-size: 28px; font-weight: 600; }
+  .carry span { display: block; font-size: 22px; color: var(--muted); margin-top: 4px; line-height: 1.35; }
+
+  /* ---------- slide 11 ---------- */
+  .s11 .wrap { margin-top: 64px; display: grid; grid-template-columns: 1fr 1fr; gap: 64px; flex: 1; }
+  .col h3 { font-size: 36px; font-weight: 600; display: flex; align-items: center; gap: 16px; }
+  .col h3 svg { width: 40px; height: 40px; color: var(--accent); }
+  .who { margin-top: 32px; display: grid; gap: 22px; }
+  .who div { padding: 28px 30px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; }
+  .who b { font-size: 30px; font-weight: 600; display: block; }
+  .who span { font-size: 24px; color: var(--muted); display: block; margin-top: 8px; line-height: 1.4; }
+  .road { margin-top: 32px; border: 1px dashed var(--line-strong); border-radius: 12px; padding: 32px 34px; }
+  .road .tag { margin-bottom: 22px; }
+  .road ul { list-style: none; display: grid; gap: 20px; }
+  .road li { font-size: 28px; line-height: 1.35; display: grid; grid-template-columns: 40px 1fr; gap: 12px; }
+  .road li svg { width: 30px; height: 30px; color: var(--muted); margin-top: 3px; }
+  .road li span.sub { display: block; font-size: 22px; color: var(--muted); }
+
+  /* ---------- slide 12 ---------- */
+  .s12 .wrap { margin-top: 64px; display: grid; grid-template-columns: 1fr 640px; gap: 80px; flex: 1; }
+  .people { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-content: start; }
+  .person { padding: 32px 32px 34px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; }
+  .person b { font-size: 38px; font-weight: 600; display: block; }
+  .person .role { font-family: var(--mono); font-size: 20px; color: var(--accent); letter-spacing: .06em; text-transform: uppercase; display: block; margin-top: 10px; }
+  .person span.what { font-size: 24px; color: #c3cad6; display: block; margin-top: 16px; line-height: 1.4; }
+  .links { display: grid; gap: 22px; align-content: start; }
+  .qr { display: grid; grid-template-columns: 200px 1fr; gap: 20px 28px; align-items: center; padding: 26px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; }
+  .qr img { width: 200px; height: 200px; border-radius: 8px; display: block; }
+  .qr b { font-size: 30px; font-weight: 600; display: block; }
+  .qr .url { grid-column: 1 / -1; font-family: var(--mono); font-size: 19px; color: var(--accent); line-height: 1.4; display: block; }
+  .qr .sub { font-size: 23px; color: var(--muted); display: block; margin-top: 8px; }
+  .soon { padding: 26px 30px; border: 1px dashed var(--line-strong); border-radius: 12px; }
+  .soon b { font-size: 30px; font-weight: 600; display: block; }
+  .soon span { font-size: 23px; color: var(--muted); display: block; margin-top: 6px; }
+</style>
+</head>
+<body>
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none">
+<symbol id="i-shield-check" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></symbol>
+<symbol id="i-shopping-cart" viewBox="0 0 24 24"><path d="m2.05 2.05 1.099-.028a1 1 0 0 1 1.008.815l2.69 14.347A1 1 0 0 0 7.83 18H18"/><path d="M4.563 5h16.435a1 1 0 0 1 .981 1.204l-1.026 6.226A2 2 0 0 1 18.962 14H6.25"/><circle cx="18" cy="20" r="2"/><circle cx="8" cy="20" r="2"/></symbol>
+<symbol id="i-file-exclamation-point" viewBox="0 0 24 24"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/><path d="M12 9v4"/><path d="M12 17h.01"/></symbol>
+<symbol id="i-shield-exclamation-point" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="M12 8v4"/><path d="M12 16h.01"/></symbol>
+<symbol id="i-accessibility" viewBox="0 0 24 24"><circle cx="16" cy="4" r="1"/><path d="m18 19 1-7-6 1"/><path d="m5 8 3-3 5.5 3-2.36 3.5"/><path d="M4.24 14.5a5 5 0 0 0 6.88 6"/><path d="M13.76 17.5a5 5 0 0 0-6.88-6"/></symbol>
+<symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></symbol>
+<symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></symbol>
+<symbol id="i-server" viewBox="0 0 24 24"><rect width="20" height="8" x="2" y="2" rx="2" ry="2"/><rect width="20" height="8" x="2" y="14" rx="2" ry="2"/><line x1="6" x2="6.01" y1="6" y2="6"/><line x1="6" x2="6.01" y1="18" y2="18"/></symbol>
+<symbol id="i-brain" viewBox="0 0 24 24"><path d="M12 18V5"/><path d="M15 13a4.17 4.17 0 01-3-4 4.17 4.17 0 01-3 4"/><path d="M17.707 6.294A3 3 0 1012 5a3 3 0 10-5.707 1.294"/><path d="M17.996 5.125a4 4 0 012.526 5.77"/><path d="M18 18a4 4 0 002-7.465"/><path d="M19.967 17.482a4 4 0 11-7.967.517 4 4 0 11-7.967-.517"/><path d="M6 18a4 4 0 01-2-7.465"/><path d="M6.004 5.125a4 4 0 00-2.526 5.77"/></symbol>
+<symbol id="i-brick-wall" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M12 9v6"/><path d="M16 15v6"/><path d="M16 3v6"/><path d="M3 15h18"/><path d="M3 9h18"/><path d="M8 15v6"/><path d="M8 3v6"/></symbol>
+<symbol id="i-box" viewBox="0 0 24 24"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></symbol>
+<symbol id="i-shield-off" viewBox="0 0 24 24"><path d="m2 2 20 20"/><path d="M5 5a1 1 0 0 0-1 1v7c0 5 3.5 7.5 7.67 8.94a1 1 0 0 0 .67.01c2.35-.82 4.48-1.97 5.9-3.71"/><path d="M9.309 3.652A12.252 12.252 0 0 0 11.24 2.28a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1v7a9.784 9.784 0 0 1-.08 1.264"/></symbol>
+<symbol id="i-scan-search" viewBox="0 0 24 24"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="12" r="3"/><path d="m16 16-1.9-1.9"/></symbol>
+<symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><path d="M16 3.128a4 4 0 0 1 0 7.744"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><circle cx="9" cy="7" r="4"/></symbol>
+<symbol id="i-code-xml" viewBox="0 0 24 24"><path d="m18 16 4-4-4-4"/><path d="m6 8-4 4 4 4"/><path d="m14.5 4-5 16"/></symbol>
+<symbol id="i-lock" viewBox="0 0 24 24"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
+<symbol id="i-radar" viewBox="0 0 24 24"><path d="M19.07 4.93A10 10 0 0 0 6.99 3.34"/><path d="M4 6h.01"/><path d="M2.29 9.62A10 10 0 1 0 21.31 8.35"/><path d="M16.24 7.76A6 6 0 1 0 8.23 16.67"/><path d="M12 18h.01"/><path d="M17.99 11.66A6 6 0 0 1 15.77 16.67"/><circle cx="12" cy="12" r="2"/><path d="m13.41 10.59 5.66-5.66"/></symbol>
+<symbol id="i-git-pull-request" viewBox="0 0 24 24"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 0 1 2 2v7"/><line x1="6" x2="6" y1="9" y2="21"/></symbol>
+<symbol id="i-calendar-clock" viewBox="0 0 24 24"><path d="M16 14v2.2l1.6 1"/><path d="M16 2v3"/><path d="M21 7.338V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2h2.338"/><path d="M3 9h5.859"/><path d="M8 2v3"/><circle cx="16" cy="16" r="6"/></symbol>
+<symbol id="i-workflow" viewBox="0 0 24 24"><rect width="8" height="8" x="3" y="3" rx="2"/><path d="M7 11v4a2 2 0 0 0 2 2h4"/><rect width="8" height="8" x="13" y="13" rx="2"/></symbol>
+<symbol id="i-user-check" viewBox="0 0 24 24"><path d="m16 11 2 2 4-4"/><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></symbol>
+<symbol id="i-list-checks" viewBox="0 0 24 24"><path d="M13 5h8"/><path d="M13 12h8"/><path d="M13 19h8"/><path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/></symbol>
+<symbol id="i-file-text" viewBox="0 0 24 24"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></symbol>
+<symbol id="i-eye-off" viewBox="0 0 24 24"><path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49"/><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242"/><path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143"/><path d="m2 2 20 20"/></symbol>
+<symbol id="i-rotate-ccw-clock" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></symbol>
+<symbol id="i-building-complex" viewBox="0 0 24 24"><path d="M10 12h4"/><path d="M10 8h4"/><path d="M14 21v-3a2 2 0 0 0-4 0v3"/><path d="M6 10H4a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-2"/><path d="M6 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16"/></symbol>
+<symbol id="i-rocket" viewBox="0 0 24 24"><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09"/><path d="M9 12a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.4 22.4 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 .05 5 .05"/></symbol>
+<symbol id="i-briefcase" viewBox="0 0 24 24"><path d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/><rect width="20" height="14" x="2" y="6" rx="2"/></symbol>
+<symbol id="i-cpu" viewBox="0 0 24 24"><path d="M12 20v2"/><path d="M12 2v2"/><path d="M17 20v2"/><path d="M17 2v2"/><path d="M2 12h2"/><path d="M2 17h2"/><path d="M2 7h2"/><path d="M20 12h2"/><path d="M20 17h2"/><path d="M20 7h2"/><path d="M7 20v2"/><path d="M7 2v2"/><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="8" y="8" width="8" height="8" rx="1"/></symbol>
+<symbol id="i-ban" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M4.929 4.929 19.07 19.071"/></symbol>
+</svg>
+
+<!-- 1. Title -->
+<section class="slide s1">
+  <div class="wrap">
+    <div>
+      <div class="logo"><svg class="i"><use href="#i-shield-check"/></svg>AgentGuard</div>
+      <h1>Tests your web app <span class="accent">before your users do.</span></h1>
+      <p class="lead">An autonomous AI security and QA engineer. Real browser tests in disposable sandboxes, evidence for every finding, and a clear release decision.</p>
+      <p class="team"><b>Ayesha</b>, <b>Sohaib</b>, <b>Sarah</b> and <b>Arslan</b> for the LabLab hackathon</p>
+    </div>
+    <div class="right">
+      <div class="shot"><img src="img/ui-report.png" alt="AgentGuard report page with a Fix first decision and a score of 60"></div>
+      <p class="cap">UI shown with demo data</p>
+    </div>
+  </div>
+  <div class="foot"><span></span><span>1</span></div>
+</section>
+
+<!-- 2. Problem -->
+<section class="slide s2">
+  <h2>Releases ship with problems nobody checked.</h2>
+  <div class="pains">
+    <div class="pain"><svg class="i"><use href="#i-shopping-cart"/></svg><h3>Broken checkout</h3><p>A valid order returns an HTTP 500 and the sale is gone.</p></div>
+    <div class="pain"><svg class="i"><use href="#i-file-exclamation-point"/></svg><h3>Leaked stack traces</h3><p>Error pages show file paths and framework versions to anyone.</p></div>
+    <div class="pain"><svg class="i"><use href="#i-shield-exclamation-point"/></svg><h3>Weak security headers</h3><p>No CSP, no HSTS, cookies without Secure or HttpOnly.</p></div>
+    <div class="pain"><svg class="i"><use href="#i-accessibility"/></svg><h3>Inaccessible pages</h3><p>Unlabeled inputs and images without alt text.</p></div>
+  </div>
+  <p class="bottom">QA and security reviews are <b>slow, manual and run by different people</b>, so these slip through right before a release.</p>
+  <div class="foot"><span class="brand"><svg class="i"><use href="#i-shield-check"/></svg>AgentGuard</span><span>2</span></div>
+</section>
+
+<!-- 3. Solution -->
+<section class="slide s3">
+  <h2>A URL in. A release decision out.</h2>
+  <div class="flow">
+    <div>
+      <div class="shot"><img src="img/ui-new-scan.png" alt="New scan form with a target URL, the Full audit profile and the authorization checkbox"></div>
+      <p class="step"><span class="n">1</span>Enter a URL, pick a profile, confirm you are allowed to test it.</p>
+    </div>
+    <div class="arrow"><svg class="i"><use href="#i-arrow-right"/></svg></div>
+    <div>
+      <div class="shot"><img src="img/ui-report-banner.png" alt="Report banner: Fix first, score 60 out of 100"></div>
+      <p class="step"><span class="n">2</span>Get a score, a verdict and the fixes, each backed by evidence.</p>
+    </div>
+  </div>
+  <div class="foot"><span class="demo-note">UI shown with demo data</span><span>3</span></div>
+</section>
+
+<!-- 4. Demo moment -->
+<section class="slide s4">
+  <h2>One clear decision, backed by a score.</h2>
+  <div class="wrap fill">
+    <div>
+      <div class="shot"><img src="img/ui-report-banner.png" alt="Report: Fix first, 60 out of 100, 2 high, 3 medium, 1 low"></div>
+      <p class="cap">UI shown with demo data</p>
+    </div>
+    <div>
+      <div class="verdicts">
+        <div class="verdict v-bad">Block release<span class="r">0-49</span></div>
+        <div class="verdict v-warn">Fix first<span class="r">50-79</span></div>
+        <div class="verdict v-ok">Safe to ship<span class="r">80-100</span></div>
+      </div>
+      <p class="rule">Start at 100 and subtract per finding:<span class="mono">critical -25, high -12</span><span class="mono">medium -5, low -1</span></p>
+    </div>
+  </div>
+  <div class="foot"><span class="brand"><svg class="i"><use href="#i-shield-check"/></svg>AgentGuard</span><span>4</span></div>
+</section>
+
+<!-- 5. How it works -->
+<section class="slide s5">
+  <h2>Plan, run, verify, decide.</h2>
+  <div class="pipe">
+    <div class="node"><div class="dot"><svg class="i"><use href="#i-globe"/></svg></div><h3>URL + profile</h3><p>Smoke, QA, Security or Full audit</p></div>
+    <div class="node ai"><div class="dot"><svg class="i"><use href="#i-brain"/></svg></div><h3>AI plan</h3><p>Picks checks from a whitelist of 18</p><span class="ai-tag">AI STEP</span></div>
+    <div class="node"><div class="dot"><svg class="i"><use href="#i-box"/></svg></div><h3>Sandboxed browser tests</h3><p>Playwright, one container per task</p></div>
+    <div class="node ai"><div class="dot"><svg class="i"><use href="#i-scan-search"/></svg></div><h3>Verifier</h3><p>Re-checks findings against saved evidence</p><span class="ai-tag">AI STEP</span></div>
+    <div class="node"><div class="dot"><svg class="i"><use href="#i-list-checks"/></svg></div><h3>Score</h3><p>0 to 100 and a verdict</p></div>
+    <div class="node"><div class="dot"><svg class="i"><use href="#i-user-check"/></svg></div><h3>Human approval</h3><p>The decision is recorded in the audit log</p></div>
+  </div>
+  <ul class="ticks">
+    <li><svg class="i"><use href="#i-list-checks"/></svg><span>The planner can only choose from 18 whitelisted checks. It can't invent new ones, and a fallback plan runs if the model is down.</span></li>
+    <li><svg class="i"><use href="#i-box"/></svg><span>Every test runs in a real browser inside a throwaway sandbox.</span></li>
+    <li><svg class="i"><use href="#i-scan-search"/></svg><span>The verifier re-checks each finding against saved evidence before it counts.</span></li>
+  </ul>
+  <div class="foot"><span class="brand"><svg class="i"><use href="#i-shield-check"/></svg>AgentGuard</span><span>5</span></div>
+</section>
+
+<!-- 6. Architecture -->
+<section class="slide s6">
+  <h2>One VM, one sandbox per test.</h2>
+  <div class="wrap">
+    <div class="shot"><img src="img/architecture-diagram.png" alt="AgentGuard architecture: web, API, Postgres, Redis, worker and docker-proxy on one VM, disposable Playwright sandboxes behind an egress firewall, Vultr Serverless Inference for planning"></div>
+    <div>
+      <ul class="ticks">
+        <li><svg class="i"><use href="#i-server"/></svg><span>Web app, API, queue and Postgres in Docker Compose on one VM</span></li>
+        <li><svg class="i"><use href="#i-brain"/></svg><span>Serverless Inference plans each scan</span></li>
+        <li><svg class="i"><use href="#i-box"/></svg><span>Every test runs in a fresh Playwright container, deleted afterwards</span></li>
+      </ul>
+      <p class="status"><b>Status.</b> Runs locally today; the Vultr deployment is in progress. Approvals are recorded only: nothing is sent to GitHub or by email yet.</p>
+    </div>
+  </div>
+  <div class="foot"><span class="brand"><svg class="i"><use href="#i-shield-check"/></svg>AgentGuard</span><span>6</span></div>
+</section>
+
+<!-- 7. Why Vultr -->
+<section class="slide s7">
+  <h2>Designed for Vultr.</h2>
+  <div class="tiles">
+    <div class="tile main"><svg class="i"><use href="#i-server"/></svg><h3>Cloud Compute VM</h3><p>Hosts the app, API, database, queue and every sandbox. Owning Docker and the host firewall is what lets us cut each sandbox off at the network level.</p></div>
+    <div class="tile"><svg class="i"><use href="#i-brain"/></svg><h3>Serverless Inference</h3><p>Test planning and summaries over an OpenAI-compatible API. No GPUs to manage.</p></div>
+    <div class="tile"><svg class="i"><use href="#i-brick-wall"/></svg><h3>Firewall</h3><p>Only 80/443, plus SSH from the team, can reach the VM.</p></div>
+  </div>
+  <p class="status"><b>Deployment in progress.</b> The stack runs locally today. The inference client is tested with a scripted model, not yet against the live Vultr endpoint; if the model fails, the built-in fallback plan runs.</p>
+  <div class="foot"><span class="brand"><svg class="i"><use href="#i-shield-check"/></svg>AgentGuard</span><span>7</span></div>
+</section>
+
+<!-- 8. Containment -->
+<section class="slide s8">
+  <h2>Containment first. We assume the site is hostile.</h2>
+  <div class="wrap fill">
+    <div>
+      <div class="shot"><img src="img/ui-blocked-by-policy.png" alt="Blocked by policy: http://169.254.169.254/latest/meta-data/, cloud metadata address is never allowed, sandbox destroyed"></div>
+      <p class="cap">The containment demo task tries to reach the cloud metadata address. UI shown with demo data.</p>
+    </div>
+    <ul class="ticks">
+      <li><svg class="i"><use href="#i-box"/></svg><span>One container per task, always destroyed</span></li>
+      <li><svg class="i"><use href="#i-cpu"/></svg><span>CPU, memory, process and time limits; non-root</span></li>
+      <li><svg class="i"><use href="#i-lock"/></svg><span>No Docker socket, no host files, no secrets inside</span></li>
+      <li><svg class="i"><use href="#i-ban"/></svg><span>Private IPs, localhost and cloud metadata blocked in 3 layers</span></li>
+      <li><svg class="i"><use href="#i-eye-off"/></svg><span>Credentials never reach the LLM; secrets are redacted</span></li>
+      <li><svg class="i"><use href="#i-rotate-ccw-clock"/></svg><span>Tamper-evident, hash-chained audit log</span></li>
+    </ul>
+  </div>
+  <div class="foot"><span class="brand"><svg class="i"><use href="#i-shield-check"/></svg>AgentGuard</span><span>8</span></div>
+</section>
+
+<!-- 9. AI agents -->
+<section class="slide s9">
+  <h2>The AI decides what to test, <span class="accent">not what is true.</span></h2>
+  <div class="wrap fill">
+    <div>
+      <table class="eval">
+        <tr><th></th><th class="num">Before verifier</th><th class="num">With verifier</th></tr>
+        <tr><td>Real findings re-checked against evidence</td><td class="num">0 of 13</td><td class="num win">13 of 13</td></tr>
+        <tr><td>Real findings lost</td><td class="num">0</td><td class="num win">0</td></tr>
+        <tr><td>False alarms that reached the score</td><td class="num">6 of 6</td><td class="num win">0 of 6</td></tr>
+      </table>
+      <p class="foot-note">Real check output from our demo store plus 6 injected faults, no LLM in the eval. Method: docs/agent-eval.md</p>
+    </div>
+    <ul class="ticks">
+      <li><svg class="i"><use href="#i-brain"/></svg><span><b>Planner:</b> whitelisted checks, task caps, one repair round, deterministic fallback</span></li>
+      <li><svg class="i"><use href="#i-scan-search"/></svg><span><b>Verifier:</b> evidence re-check, dedupe, severity guide; unbacked claims never count</span></li>
+      <li><svg class="i"><use href="#i-shield-check"/></svg><span><b>Prompt injection:</b> site text is redacted and fenced as data, and every answer is validated</span></li>
+    </ul>
+  </div>
+  <div class="foot"><span class="brand"><svg class="i"><use href="#i-shield-check"/></svg>AgentGuard</span><span>9</span></div>
+</section>
+
+<!-- 10. Evidence -->
+<section class="slide s10">
+  <h2>Every finding comes with proof and a fix.</h2>
+  <div class="wrap fill">
+    <div>
+      <div class="shot"><img src="img/ui-finding.png" alt="Finding page: Error response leaks internal stack trace, with three reproduction steps, high severity, 94 percent confidence, re-checked"></div>
+      <p class="cap">UI shown with demo data, modelled on our deliberately flawed demo store.</p>
+    </div>
+    <div class="carries">
+      <div class="carry"><svg class="i"><use href="#i-shield-exclamation-point"/></svg><div><b>Severity + confidence</b><span>Clamped to a severity guide</span></div></div>
+      <div class="carry"><svg class="i"><use href="#i-list-checks"/></svg><div><b>Reproduction steps</b><span>Exact steps to see it yourself</span></div></div>
+      <div class="carry"><svg class="i"><use href="#i-file-text"/></svg><div><b>Evidence</b><span>Screenshot and network summary from the sandbox</span></div></div>
+      <div class="carry"><svg class="i"><use href="#i-user-check"/></svg><div><b>Suggested fix</b><span>What to change before release</span></div></div>
+    </div>
+  </div>
+  <div class="foot"><span class="brand"><svg class="i"><use href="#i-shield-check"/></svg>AgentGuard</span><span>10</span></div>
+</section>
+
+<!-- 11. Business + roadmap -->
+<section class="slide s11">
+  <h2>Who needs it, and what comes next.</h2>
+  <div class="wrap fill">
+    <div class="col">
+      <h3><svg class="i"><use href="#i-briefcase"/></svg>Who it is for</h3>
+      <div class="who">
+        <div><b>Product, QA and security teams</b><span>One release check instead of separate, manual reviews</span></div>
+        <div><b>Agencies</b><span>Evidence-backed reports before handing a site to a client</span></div>
+        <div><b>Startups before launch</b><span>A safety net without a dedicated security hire</span></div>
+      </div>
+    </div>
+    <div class="col">
+      <h3><svg class="i"><use href="#i-rocket"/></svg>Roadmap</h3>
+      <div class="road">
+        <span class="tag warn"><svg class="i"><use href="#i-calendar-clock"/></svg>Future work, not in the demo</span>
+        <ul>
+          <li><svg class="i"><use href="#i-git-pull-request"/></svg><span>CI/CD integration<span class="sub">Scan every pull request and preview deploy</span></span></li>
+          <li><svg class="i"><use href="#i-lock"/></svg><span>Authenticated flows<span class="sub">Test pages behind a login</span></span></li>
+          <li><svg class="i"><use href="#i-calendar-clock"/></svg><span>Scheduled scans and more profiles</span></li>
+          <li><svg class="i"><use href="#i-file-text"/></svg><span>Send approved GitHub issues and PDF reports<span class="sub">Today approvals are recorded only</span></span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span class="brand"><svg class="i"><use href="#i-shield-check"/></svg>AgentGuard</span><span>11</span></div>
+</section>
+
+<!-- 12. Team + links -->
+<section class="slide s12">
+  <h2>The team</h2>
+  <div class="wrap fill">
+    <div class="people">
+      <div class="person"><b>Ayesha</b><span class="role">UI, docs and demo</span><span class="what">Web app and reports</span></div>
+      <div class="person"><b>Sohaib</b><span class="role">Backend</span><span class="what">API and orchestration, QA checks, demo store</span></div>
+      <div class="person"><b>Sarah</b><span class="role">AI / agent</span><span class="what">Planner, verifier and scoring</span></div>
+      <div class="person"><b>Arslan</b><span class="role">Infra + security</span><span class="what">Sandbox, security checks, policy and audit, Vultr deploy</span></div>
+    </div>
+    <div class="links">
+      <div class="qr"><img src="img/qr-github-repo.svg" alt="QR code for the GitHub repository"><div><b>Code on GitHub</b><span class="sub">Scan to open the repository</span></div><span class="url">github.com/arslan-ahm/<br>AgentGuard-The-Redteam-Agent-lablab.ai-project-</span></div>
+      <div class="soon"><b>Demo video</b><span>Coming soon</span></div>
+      <div class="soon"><b>Live demo</b><span>Coming soon, deployment in progress</span></div>
+    </div>
+  </div>
+  <div class="foot"><span class="brand"><svg class="i"><use href="#i-shield-check"/></svg>AgentGuard</span><span>12</span></div>
+</section>
+</body>
+</html>
