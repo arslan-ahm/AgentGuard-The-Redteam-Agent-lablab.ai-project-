@@ -1,1 +1,361 @@
 @import 'tailwindcss';
+
+/*
+ * AgentGuard design tokens: "Sandbox Console" (from the team's Stitch reference; no DESIGN.md
+ * yet, so these are the spec).
+ * Dark is the default theme; `<html data-theme="light">` switches to light (set before paint by
+ * public/theme-init.js, toggled in the top bar).
+ *
+ * Colour roles:
+ * - accent (cyan) is the brand: primary buttons, links, focus, selection, the shield mark.
+ * - tertiary (amber) is a rare highlight ("Recommended"). Not a warning colour.
+ * - critical/high/medium/low are severities only; success/warn/bad are verdicts and states.
+ * Every text/background pair meets WCAG AA (4.5:1); borders and graphics meet 3:1.
+ * Use the token utilities (bg-canvas, text-fg-muted, border-line, rounded-md...) instead of raw
+ * hex values or Tailwind's default palette. Small uppercase labels use `label-mono` plus a text
+ * colour (usually `text-fg-muted`).
+ */
+@theme {
+  --font-sans:
+    'Space Grotesk Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono Variable', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* Surfaces: page (canvas) < card (panel); raised = inset areas, inputs, hover */
+  --color-canvas: #0b0e14;
+  --color-panel: #12161f;
+  --color-raised: #1a1f2b;
+  --color-line: #232a38;
+  /* 3:1 on panel: input borders and other UI edges */
+  --color-line-strong: #66728a;
+
+  /* Text */
+  --color-fg: #e6eaf2;
+  --color-fg-muted: #8b95a7;
+
+  /* Brand (cyan) */
+  --color-accent: #2dd4e8;
+  --color-accent-hover: #67e8f9;
+  --color-accent-soft: #0b2a31;
+  --color-on-accent: #04131a;
+
+  /* Tertiary highlight (amber) */
+  --color-tertiary: #f5a524;
+  --color-tertiary-soft: #33240a;
+
+  /* Severity: text colour + soft background. Low is slate blue so it never blurs with medium. */
+  --color-critical: #ff7a85;
+  --color-critical-soft: #3a1820;
+  --color-high: #ff9f5a;
+  --color-high-soft: #3a2414;
+  --color-medium: #f5c451;
+  --color-medium-soft: #33290e;
+  --color-low: #8fb3d9;
+  --color-low-soft: #15233a;
+
+  /* Verdicts and states */
+  --color-success: #34d399;
+  --color-success-soft: #0b2e24;
+  --color-warn: #f5a524;
+  --color-warn-soft: #33240a;
+  --color-bad: #f87171;
+  --color-bad-soft: #3a1820;
+  --color-blocked: #f87171;
+
+  /* Type: page titles sit at 28px (scale 12/14/16/20/28/40). */
+  --text-title: 1.75rem;
+  --text-title--line-height: 1.2;
+
+  /* Reading width for the finding and report pages (880px). */
+  --container-reading: 55rem;
+
+  /* Radii: sm = nested small marks, md = inputs/buttons/badges, lg = cards and dialogs */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+
+  /* Glass + soft-3D (neumorphic) depth. Light theme overrides below. */
+  --color-glass-edge: rgb(255 255 255 / 0.09);
+  --color-glow-1: rgb(45 212 232 / 0.2);
+  --color-glow-2: rgb(245 165 36 / 0.08);
+  --color-glow-3: rgb(56 189 248 / 0.12);
+  --shadow-glass: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 12px 32px -14px rgb(0 0 0 / 0.65);
+  --shadow-neu: -3px -3px 8px rgb(255 255 255 / 0.035), 4px 4px 12px rgb(0 0 0 / 0.55);
+  --shadow-neu-inset:
+    inset 2px 2px 6px rgb(0 0 0 / 0.55), inset -2px -2px 6px rgb(255 255 255 / 0.04);
+  --shadow-lift:
+    inset 0 1px 0 rgb(255 255 255 / 0.08),
+    0 0 0 1px color-mix(in srgb, var(--color-accent) 35%, transparent),
+    0 18px 40px -16px color-mix(in srgb, var(--color-accent) 45%, transparent);
+
+  --animate-feed-in: feed-in 160ms ease-out both;
+  --animate-alert-pulse: alert-pulse 900ms ease-out 1;
+  --animate-shimmer: shimmer 1.6s linear infinite;
+
+  @keyframes feed-in {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  @keyframes alert-pulse {
+    0% {
+      box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-bad) 45%, transparent);
+    }
+    100% {
+      box-shadow: 0 0 0 10px color-mix(in srgb, var(--color-bad) 0%, transparent);
+    }
+  }
+  @keyframes shimmer {
+    from {
+      transform: translateX(-100%);
+    }
+    to {
+      transform: translateX(100%);
+    }
+  }
+}
+
+@utility label-mono {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  line-height: 1rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* Frosted card over the ambient backdrop. A soft cyan spotlight follows the pointer (lib/spotlight.ts). */
+@utility glass {
+  background-color: color-mix(in srgb, var(--color-panel) var(--glass-alpha, 66%), transparent);
+  background-image: radial-gradient(
+    26rem circle at var(--mx, -999px) var(--my, -999px),
+    color-mix(in srgb, var(--color-accent) 10%, transparent),
+    transparent 60%
+  );
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  backdrop-filter: blur(18px) saturate(150%);
+  box-shadow: var(--shadow-glass);
+}
+
+/* Raised soft-3D control: presses in when active. */
+@utility neu {
+  box-shadow: var(--shadow-neu);
+  transition:
+    box-shadow 160ms ease,
+    transform 160ms ease,
+    background-color 160ms ease,
+    color 160ms ease,
+    border-color 160ms ease;
+  &:active:not(:disabled) {
+    box-shadow: var(--shadow-neu-inset);
+    transform: translateY(1px);
+  }
+}
+
+/* Flat until hovered, then raised; presses in. For icon and ghost buttons. */
+@utility neu-soft {
+  transition:
+    box-shadow 160ms ease,
+    transform 160ms ease,
+    background-color 160ms ease,
+    color 160ms ease;
+  &:hover:not(:disabled) {
+    box-shadow: var(--shadow-neu);
+  }
+  &:active:not(:disabled) {
+    box-shadow: var(--shadow-neu-inset);
+    transform: translateY(1px);
+  }
+}
+
+/* Clickable card: lifts with a cyan halo on hover, settles on press. */
+@utility lift {
+  transition:
+    transform 200ms ease,
+    box-shadow 200ms ease,
+    border-color 200ms ease,
+    background-color 200ms ease;
+  @media (hover: hover) {
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-lift);
+    }
+  }
+  &:active {
+    transform: translateY(0) scale(0.99);
+  }
+}
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  /* `.dark-scope` keeps one region (the login showcase) dark even in the light theme. */
+  .dark-scope {
+    color-scheme: dark;
+    --color-canvas: #0b0e14;
+    --color-panel: #12161f;
+    --color-raised: #1a1f2b;
+    --color-line: #232a38;
+    --color-line-strong: #66728a;
+    --color-fg: #e6eaf2;
+    --color-fg-muted: #8b95a7;
+    --color-accent: #2dd4e8;
+    --color-accent-hover: #67e8f9;
+    --color-accent-soft: #0b2a31;
+    --color-on-accent: #04131a;
+    --color-tertiary: #f5a524;
+    --color-tertiary-soft: #33240a;
+    --color-success: #34d399;
+    --color-success-soft: #0b2e24;
+    --color-warn: #f5a524;
+    --color-warn-soft: #33240a;
+    --color-bad: #f87171;
+    --color-bad-soft: #3a1820;
+    --color-glass-edge: rgb(255 255 255 / 0.09);
+    --color-glow-1: rgb(45 212 232 / 0.2);
+    --color-glow-2: rgb(245 165 36 / 0.08);
+    --shadow-glass: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 12px 32px -14px rgb(0 0 0 / 0.65);
+  }
+
+  /* Light theme: same roles on white, re-tuned for AA. */
+  :root[data-theme='light'] {
+    color-scheme: light;
+    --color-canvas: #f6f8fa;
+    --color-panel: #ffffff;
+    --color-raised: #eef2f6;
+    --color-line: #dde3ea;
+    --color-line-strong: #8a94a3;
+    --color-fg: #0b1220;
+    --color-fg-muted: #556070;
+    --color-accent: #0e7490;
+    --color-accent-hover: #155e75;
+    --color-accent-soft: #e6f6f9;
+    --color-on-accent: #ffffff;
+    --color-tertiary: #92600a;
+    --color-tertiary-soft: #fef3dc;
+    --color-critical: #8b2615;
+    --color-critical-soft: #fbeae6;
+    --color-high: #c0341d;
+    --color-high-soft: #fdedea;
+    --color-medium: #92600a;
+    --color-medium-soft: #fef3dc;
+    --color-low: #4b6a8a;
+    --color-low-soft: #eaf0f6;
+    --color-success: #15803d;
+    --color-success-soft: #f0fdf4;
+    --color-warn: #b45309;
+    --color-warn-soft: #fffbeb;
+    --color-bad: #b91c1c;
+    --color-bad-soft: #fef2f2;
+    --color-blocked: #b91c1c;
+    --color-glass-edge: rgb(15 23 42 / 0.08);
+    --color-glow-1: rgb(14 116 144 / 0.14);
+    --color-glow-2: rgb(245 165 36 / 0.1);
+    --color-glow-3: rgb(56 189 248 / 0.12);
+    --shadow-glass: inset 0 1px 0 rgb(255 255 255 / 0.9), 0 12px 32px -16px rgb(15 23 42 / 0.2);
+    --shadow-neu: -4px -4px 10px rgb(255 255 255 / 0.95), 4px 4px 12px rgb(15 23 42 / 0.13);
+    --shadow-neu-inset:
+      inset 2px 2px 6px rgb(15 23 42 / 0.12), inset -2px -2px 6px rgb(255 255 255 / 0.95);
+    --shadow-lift:
+      inset 0 1px 0 rgb(255 255 255 / 0.9),
+      0 0 0 1px color-mix(in srgb, var(--color-accent) 30%, transparent),
+      0 18px 40px -18px color-mix(in srgb, var(--color-accent) 40%, transparent);
+  }
+
+  /* Ambient backdrop: soft colour fields and a faint grid, so the glass has something to frost. */
+  body {
+    @apply bg-canvas font-sans text-fg antialiased;
+    background-image:
+      radial-gradient(60rem 40rem at 0% -10%, var(--color-glow-1), transparent 60%),
+      radial-gradient(45rem 35rem at 100% 0%, var(--color-glow-2), transparent 60%),
+      radial-gradient(55rem 45rem at 60% 110%, var(--color-glow-3), transparent 60%),
+      linear-gradient(
+        to right,
+        color-mix(in srgb, var(--color-fg) 3%, transparent) 1px,
+        transparent 1px
+      ),
+      linear-gradient(
+        to bottom,
+        color-mix(in srgb, var(--color-fg) 3%, transparent) 1px,
+        transparent 1px
+      );
+    background-size:
+      auto,
+      auto,
+      auto,
+      40px 40px,
+      40px 40px;
+    background-attachment: fixed;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-behavior: smooth;
+    }
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+
+  /* "Save as PDF" always prints light on white paper, without the app chrome. */
+  @media print {
+    :root,
+    :root[data-theme='light'],
+    .dark-scope {
+      color-scheme: light;
+      --color-canvas: #ffffff;
+      --color-panel: #ffffff;
+      --color-raised: #f3f4f6;
+      --color-line: #d1d5db;
+      --color-line-strong: #9ca3af;
+      --color-fg: #111827;
+      --color-fg-muted: #4b5563;
+      --color-accent: #0e7490;
+      --color-accent-soft: #e6f6f9;
+      --color-tertiary: #92600a;
+      --color-tertiary-soft: #fef3dc;
+      --color-critical: #8b2615;
+      --color-critical-soft: #fbeae6;
+      --color-high: #c0341d;
+      --color-high-soft: #fdedea;
+      --color-medium: #92600a;
+      --color-medium-soft: #fef3dc;
+      --color-low: #4b6a8a;
+      --color-low-soft: #eaf0f6;
+      --color-success: #15803d;
+      --color-success-soft: #f0fdf4;
+      --color-warn: #b45309;
+      --color-warn-soft: #fffbeb;
+      --color-bad: #b91c1c;
+      --color-bad-soft: #fef2f2;
+      --color-glass-edge: #d1d5db;
+      --shadow-glass: none;
+      --shadow-neu: none;
+      --shadow-neu-inset: none;
+    }
+    body,
+    .glass {
+      background-image: none !important;
+      -webkit-backdrop-filter: none !important;
+      backdrop-filter: none !important;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
