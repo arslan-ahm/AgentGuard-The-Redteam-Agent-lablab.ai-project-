@@ -2,9 +2,9 @@
 
 Real modules are used by default: Arslan's ``UrlValidator``, ``ScanRateLimiter``,
 ``HashChainedAuditLog`` (on the SQL database) and ``DockerSandboxRunner``. The planner is
-Sarah's; until her module lands the ``FakePlanner`` is used. Fakes for the sandbox too are
-opt-in only: set ``AGENTGUARD_USE_FAKES=1`` (local development without Docker). They are never
-chosen silently.
+Sarah's ``AgentPlanner``: Vultr Serverless Inference when ``VULTR_INFERENCE_*`` are set, its
+deterministic fallback plan otherwise. Fakes are opt-in only: set ``AGENTGUARD_USE_FAKES=1``
+(local development without Docker). They are never chosen silently.
 """
 
 from __future__ import annotations
@@ -17,6 +17,9 @@ from pathlib import Path
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
+from app.agent.inference import VultrInferenceClient
+from app.agent.planner import AgentPlanner
+from app.agent.verifier import EvidenceVerifier
 from app.config import Settings, get_settings
 from app.interfaces import AuditSink, Planner, SandboxRunner, UrlPolicy
 from app.orchestrator.db_audit import DbAuditStore
@@ -87,10 +90,16 @@ def build_services(settings: Settings | None = None) -> Services:
             audit=audit,
         )
 
-    if not use_fakes():
-        # Sarah's planner (app/agent) does not exist yet, so real scans are planned by the
-        # deterministic fake plan. Say so loudly instead of looking like the real thing.
-        log.warning("NO REAL PLANNER: scans use FakePlanner (fixed plan per profile)")
+    planner: Planner
+    verifier: Verifier
+    if use_fakes():
+        planner, verifier = FakePlanner(), ConfidenceVerifier()
+    else:
+        model = VultrInferenceClient.from_settings(settings)
+        if model is None:
+            log.warning("VULTR_INFERENCE_* not set: planner uses fallback plans, verifier no LLM")
+        planner = AgentPlanner(model)
+        verifier = EvidenceVerifier(work_root, model)
 
     return Services(
         session_factory=session_factory,
@@ -98,7 +107,8 @@ def build_services(settings: Settings | None = None) -> Services:
         rate_limiter=ScanRateLimiter(),
         audit=audit,
         audit_store=store,
-        planner=FakePlanner(),  # replaced by Sarah's planner when app/agent provides one
+        planner=planner,
+        verifier=verifier,
         sandbox=sandbox,
         evidence_root=work_root,
         secret_key=settings.secret_key.get_secret_value(),

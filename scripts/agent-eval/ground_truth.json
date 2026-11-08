@@ -1,0 +1,27 @@
+{
+  "_about": "Labels for the verifier eval. 'planted' is the flaw table of scripts/demo-store/README.md. 'confirmed_extra' are real issues the checks found that the table does not list, each confirmed by hand with curl (see docs/agent-eval.md).",
+  "planted": [
+    {"id": "broken_link", "check_id": "qa.links_assets", "path": "/old-sale"},
+    {"id": "missing_script", "check_id": "qa.links_assets", "path": "/about"},
+    {"id": "console_error", "check_id": "qa.console_network_errors", "path": "/about"},
+    {"id": "missing_alt", "check_id": "qa.accessibility", "path": "/"},
+    {"id": "contact_500", "check_id": "qa.forms", "path": "/contact"},
+    {"id": "checkout_500", "check_id": "qa.checkout", "path": "/checkout"},
+    {"id": "stack_trace", "check_id": "security.error_leak", "path": "/checkout"},
+    {"id": "no_csp", "check_id": "security.headers", "path": "/", "title": "content-security-policy"},
+    {"id": "no_xfo", "check_id": "security.headers", "path": "/", "title": "clickjacking"},
+    {"id": "weak_cookie", "check_id": "security.cookies", "path": "/"},
+    {"id": "sid_in_url", "check_id": "security.url_session_leak", "path": "/"},
+    {"id": "open_redirect", "check_id": "security.open_redirect", "path": "/redirect"},
+    {"id": "reflected_search", "check_id": "security.reflected_input", "path": "/search"},
+    {"id": "admin_exposed", "check_id": "security.exposed_endpoints", "path": "/admin"},
+    {"id": "no_login_limit", "check_id": "security.login_rate_probe", "path": "/login"},
+    {"id": "no_https", "check_id": "security.https_redirect", "path": "/"}
+  ],
+  "confirmed_extra": [
+    {"id": "no_nosniff", "check_id": "security.headers", "title": "x-content-type-options"},
+    {"id": "no_referrer_policy", "check_id": "security.headers", "title": "referrer-policy"},
+    {"id": "server_banner", "check_id": "security.headers", "title": "server software version"},
+    {"id": "reflected_sid", "check_id": "security.reflected_input", "title": "'sid' parameter"}
+  ]
+}

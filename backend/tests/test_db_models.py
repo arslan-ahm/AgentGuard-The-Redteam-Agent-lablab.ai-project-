@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterator
 from pathlib import Path
 from uuid import uuid4
 
@@ -34,7 +35,7 @@ BACKEND = Path(__file__).resolve().parent.parent
 
 
 @pytest.fixture
-def session() -> Session:
+def session() -> Iterator[Session]:
     engine = create_engine("sqlite://")
     Base.metadata.create_all(engine)
     with Session(engine) as s:
