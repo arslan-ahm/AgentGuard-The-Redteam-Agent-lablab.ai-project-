@@ -11,6 +11,7 @@ import { AsideCard, SplitLayout } from '../components/SplitLayout'
 import { ErrorState, PageHeader } from '../components/states'
 import { Alert } from '../components/ui/Alert'
 import { Button } from '../components/ui/Button'
+import { buttonClasses } from '../components/ui/buttonStyles'
 import { SectionTabs } from '../components/ui/SectionTabs'
 import { LoadingState } from '../components/ui/Spinner'
 import { ActivityFeed } from '../features/scan/ActivityFeed'
@@ -98,10 +99,7 @@ function ScanView({ scanId }: { scanId: string }) {
     )
 
   const reportLink = finished && scan.status !== 'blocked' && (
-    <Link
-      to={`/scans/${scan.id}/report`}
-      className="neu inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-accent px-4 text-sm font-medium text-on-accent hover:bg-accent-hover"
-    >
+    <Link to={`/scans/${scan.id}/report`} className={buttonClasses('primary', 'w-full')}>
       <FileText aria-hidden="true" className="size-4" />
       View report
     </Link>

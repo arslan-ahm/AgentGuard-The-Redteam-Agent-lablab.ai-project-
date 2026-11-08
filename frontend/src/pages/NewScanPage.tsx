@@ -20,6 +20,7 @@ import { AsideCard, SplitLayout } from '../components/SplitLayout'
 import { PageHeader } from '../components/states'
 import { Alert } from '../components/ui/Alert'
 import { Button } from '../components/ui/Button'
+import { buttonClasses } from '../components/ui/buttonStyles'
 import { TextField } from '../components/ui/TextField'
 import { hostOf, PROFILE_LABELS } from '../lib/format'
 import { validateTargetUrl } from '../lib/validation'
@@ -296,7 +297,7 @@ export function NewScanPage() {
               type="checkbox"
               checked={containmentDemo}
               onChange={(e) => setContainmentDemo(e.target.checked)}
-              className="relative mt-0.5 h-6 w-11 shrink-0 cursor-pointer appearance-none rounded-full bg-line-strong shadow-neu-inset transition-colors before:absolute before:top-0.5 before:left-0.5 before:size-5 before:rounded-full before:bg-white before:shadow-neu before:transition-transform checked:bg-accent checked:before:translate-x-5"
+              className="relative mt-0.5 h-6 w-11 shrink-0 cursor-pointer appearance-none rounded-full bg-line-strong shadow-neu-inset transition-colors before:absolute before:top-0.5 before:left-0.5 before:size-5 before:rounded-full before:bg-switch-knob before:shadow-neu before:transition-transform checked:bg-accent checked:before:translate-x-5"
             />
           </label>
 
@@ -308,10 +309,7 @@ export function NewScanPage() {
             >
               {submitting ? 'Starting scan…' : 'Start scan'}
             </Button>
-            <Link
-              to="/"
-              className="inline-flex min-h-11 items-center neu-soft rounded-md px-4 text-sm font-medium text-fg-muted hover:bg-raised hover:text-fg"
-            >
+            <Link to="/" className={buttonClasses('ghost')}>
               Cancel
             </Link>
           </div>

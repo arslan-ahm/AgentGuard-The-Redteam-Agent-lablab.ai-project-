@@ -28,6 +28,7 @@ import {
   PROFILE_LABELS,
 } from '../lib/format'
 import { useAsync } from '../lib/useAsync'
+import { buttonClasses } from '../components/ui/buttonStyles'
 
 const REFRESH_MS = 5_000
 
@@ -184,10 +185,7 @@ export function DashboardPage() {
   }, [active, reload])
 
   const newScan = (
-    <Link
-      to="/scans/new"
-      className="inline-flex min-h-11 items-center gap-2 rounded-md bg-accent px-4 text-sm font-medium text-on-accent transition-colors hover:bg-accent-hover"
-    >
+    <Link to="/scans/new" className={buttonClasses('primary')}>
       <Plus aria-hidden="true" className="size-4" />
       New scan
     </Link>
