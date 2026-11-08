@@ -48,6 +48,8 @@ export interface Finding {
 export interface ScanCreate {
   target_url: string
   profile: ScanProfile
+  /** CR-4: the user attests they own the site or may test it. Recorded in the audit log. */
+  authorized: true
   credentials_ref?: string | null
 }
 

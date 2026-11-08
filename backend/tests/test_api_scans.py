@@ -16,7 +16,7 @@ from app.orchestrator.services import Services
 from app.policy.rate_limit import ScanRateLimiter
 from tests.conftest import login
 
-BODY = {"target_url": "https://shop.example.com", "profile": "smoke"}
+BODY = {"target_url": "https://shop.example.com", "profile": "smoke", "authorized": True}
 FINAL = {"awaiting_approval", "completed", "failed", "blocked"}
 
 
@@ -254,3 +254,18 @@ def test_evidence_serves_a_real_file_and_never_a_symlink(
     if can_link:
         link = client.get(f"/api/v1/scans/{scan_id}/evidence/t1__link.png", headers=auth)
         assert link.status_code == 404
+
+
+def test_authorization_attestation_is_audited(client: TestClient, auth: dict[str, str]) -> None:
+    """CR-4 / brief 13: the attestation reaches the audit log with the scan's creation."""
+    scan_id = client.post("/api/v1/scans", json=BODY, headers=auth).json()["id"]
+    events = client.get(f"/api/v1/scans/{scan_id}/audit", headers=auth).json()
+    created = [e for e in events if e["action"] == "scan.status" and e["target"] == "queued"]
+    assert created and created[0]["reason"].endswith("authorization attested")
+
+
+def test_scan_without_attestation_is_rejected(client: TestClient, auth: dict[str, str]) -> None:
+    body = {k: v for k, v in BODY.items() if k != "authorized"}
+    response = client.post("/api/v1/scans", json=body, headers=auth)
+    assert response.status_code == 422
+    assert response.json()["error"]["code"] == "validation_error"

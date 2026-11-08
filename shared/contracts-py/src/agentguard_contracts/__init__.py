@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import StrEnum
-from typing import Any, Final
+from typing import Any, Final, Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -201,10 +201,12 @@ API_PREFIX: Final = "/api/v1"
 
 
 class ScanCreate(_Frozen):
-    """Body of ``POST /scans``."""
+    """Body of ``POST /scans``. ``authorized`` (CR-4, brief 13) is the user's attestation that
+    they own the target or may test it; it must be ``true`` and is written to the audit log."""
 
     target_url: str
     profile: ScanProfile
+    authorized: Literal[True]
     credentials_ref: str | None = None
 
 

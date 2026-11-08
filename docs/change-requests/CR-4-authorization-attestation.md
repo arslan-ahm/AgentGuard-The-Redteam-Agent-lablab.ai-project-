@@ -2,7 +2,7 @@
 
 - Requested by: Ayesha (Web app / UI)
 - Date: 2026-11-07
-- Status: proposed
+- Status: implemented on branch `feat/api-attestation` (Arslan's session, 2026-11-08)
 
 ## What
 
@@ -39,5 +39,5 @@ The form requires the checkbox before it submits, but sends the current contract
 
 ## Approvals (required: owner of affected module; contract/architecture changes: Arslan AND Sarah)
 - [ ] Sohaib (API), <date>
-- [ ] Arslan, <date>
+- [x] Arslan, 2026-11-08
 - [ ] Sarah, <date>

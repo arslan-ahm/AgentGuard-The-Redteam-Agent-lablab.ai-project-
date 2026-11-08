@@ -171,7 +171,7 @@ export function demoAudit(scanId: string = DEMO_SCAN_ID, day = '2026-11-06'): Au
       'api',
       'scan.status',
       'queued',
-      'created by demo@agentguard.test',
+      'created by demo@agentguard.test; authorization attested',
     ),
     event(scanId, at('10:00:01'), 'api', 'scan.status', 'planning', 'claimed by worker'),
     event(scanId, at('10:00:04'), 'api', 'plan.created', '7 tasks', 'full'),

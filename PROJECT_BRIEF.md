@@ -223,7 +223,7 @@ async def run(page, ctx) -> list[dict]:  # returns Finding dicts (no id/scan_id)
 | Method | Path | Purpose |
 |---|---|---|
 | POST | `/auth/login` | Login, returns token |
-| POST | `/scans` | Body `{target_url, profile, credentials_ref?}` -> `{id, status}` |
+| POST | `/scans` | Body `{target_url, profile, authorized: true, credentials_ref?}` -> `{id, status}` (`authorized`: CR-4) |
 | GET | `/scans` | List scans |
 | GET | `/scans/{id}` | Status, progress, score, recommendation |
 | GET | `/scans/{id}/events` | SSE stream of progress + audit events |

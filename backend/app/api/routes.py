@@ -199,7 +199,7 @@ async def create_scan(
                 action="scan.create",
                 target=body.target_url[:500],
                 decision=AuditDecision.BLOCKED,
-                reason=reason,
+                reason=f"{reason}; authorization attested by {user}",
             )
         )
         _error(status.HTTP_403_FORBIDDEN, "target_blocked", reason)
@@ -234,7 +234,7 @@ async def create_scan(
             action="scan.status",
             target=ScanStatus.QUEUED.value,
             decision=AuditDecision.ALLOWED,
-            reason=f"created by {user}",
+            reason=f"created by {user}; authorization attested",
         )
     )
     if services.queue is None:

@@ -119,7 +119,7 @@ export function NewScanPage() {
     setSubmitting(true)
     try {
       const created = await api.createScan(
-        { target_url: targetUrl.trim(), profile },
+        { target_url: targetUrl.trim(), profile, authorized: true },
         { containmentDemo },
       )
       navigate(`/scans/${created.id}`)

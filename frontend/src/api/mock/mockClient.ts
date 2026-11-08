@@ -280,7 +280,13 @@ export function createMockClient(options: MockClientOptions = {}): ApiClient {
         log(id, 'policy', 'scan.create', body.target_url, reason, { blocked: true })
         throw new ApiError(403, 'target_blocked', reason)
       }
-      log(id, 'api', 'scan.status', 'queued', 'created by demo@agentguard.test')
+      log(
+        id,
+        'api',
+        'scan.status',
+        'queued',
+        'created by demo@agentguard.test; authorization attested',
+      )
       void run(id, body.profile, createOptions.containmentDemo ?? false)
       return { id, status: 'queued' }
     },
