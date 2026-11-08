@@ -78,5 +78,5 @@ team's Stitch reference. Dark is the default theme; `<html data-theme="light">` 
 - PDF export uses the browser's print dialog with a light print stylesheet, because the API
   answers `format=pdf` with `501 not_implemented`.
 - Approvals only record the decision (`executed: false`); the UI says so after approving.
-- The authorization checkbox is required in the form but not yet sent to the API (CR-3).
+- The authorization checkbox is required in the form but not yet sent to the API (CR-4).
 - Screenshots are shown through `blob:` URLs, so the Caddy CSP allows `img-src blob:`.

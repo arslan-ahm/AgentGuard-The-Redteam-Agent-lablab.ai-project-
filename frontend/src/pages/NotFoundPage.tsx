@@ -1,4 +1,5 @@
 import { Link } from 'react-router'
+import { buttonClasses } from '../components/ui/buttonStyles'
 
 export function NotFoundPage() {
   return (
@@ -8,10 +9,7 @@ export function NotFoundPage() {
         Page not found
       </h1>
       <p className="mt-2 text-sm text-fg-muted">The page you opened doesn’t exist or has moved.</p>
-      <Link
-        to="/"
-        className="mt-6 inline-flex min-h-11 items-center neu rounded-md border border-glass-edge bg-raised px-4 text-sm font-medium text-fg hover:border-line-strong hover:text-accent"
-      >
+      <Link to="/" className={buttonClasses('secondary', 'mt-6')}>
         Back to scans
       </Link>
     </section>

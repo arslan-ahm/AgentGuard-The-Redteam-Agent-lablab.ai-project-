@@ -61,12 +61,16 @@
   --color-bad-soft: #3a1820;
   --color-blocked: #f87171;
 
-  /* Type: page titles sit at 28px (scale 12/14/16/20/28/40). */
+  /* Type: page titles sit at 28px. Sizes in use: 11 (label-mono), 12, 14, 16, 18, 20, 24 and 30
+     (metrics), 28 (title), 36 (decision headline). Add a size here before using a new one. */
   --text-title: 1.75rem;
   --text-title--line-height: 1.2;
 
   /* Reading width for the finding and report pages (880px). */
   --container-reading: 55rem;
+
+  /* Switch knob: white in every theme (on the grey track and on the accent track). */
+  --color-switch-knob: #ffffff;
 
   /* Radii: sm = nested small marks, md = inputs/buttons/badges, lg = cards and dialogs */
   --radius-sm: 6px;

@@ -121,7 +121,7 @@ Full details and how each control is tested: [docs/containment-policy.md](docs/c
 |---|:-:|
 | 🧭 App scaffold, routes, API client + mock data | 🟡 built on `feat/web-scaffold`, not merged yet; tested in mock mode and against the local backend |
 | 🔐 Login page | 🟡 built on `feat/web-scaffold`, not merged yet; tested in mock mode and against the local backend |
-| 📊 Dashboard (scan list + scores) and new-scan form (URL, profile, authorization checkbox) | 🟡 built on `feat/web-scaffold`, not merged yet; tested in mock mode and against the local backend; attestation not stored by the API yet (CR-3) |
+| 📊 Dashboard (scan list + scores) and new-scan form (URL, profile, authorization checkbox) | 🟡 built on `feat/web-scaffold`, not merged yet; tested in mock mode and against the local backend; attestation not stored by the API yet (CR-4) |
 | 📡 Live progress view (SSE): planning → sandbox → tests → **red "Blocked by policy"** + sandbox destroyed | 🟡 built on `feat/web-scaffold`, not merged yet; tested in mock mode and against the local backend (fake sandbox) |
 | 🧾 Findings list, severity badges, evidence viewer (screenshot, network summary, repro) | 🟡 built on `feat/web-scaffold`, not merged yet; tested in mock mode and against the local backend; evidence viewer checked with mock files only |
 | ✋ Approval dialog (GitHub issue / send report) | 🟡 built on `feat/web-scaffold`, not merged yet; tested in mock mode and against the local backend; records the decision only, like the API |

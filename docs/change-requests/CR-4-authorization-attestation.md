@@ -1,4 +1,4 @@
-# CR-3: Record the "authorized to test" attestation on scan creation
+# CR-4: Record the "authorized to test" attestation on scan creation
 
 - Requested by: Ayesha (Web app / UI)
 - Date: 2026-11-07
