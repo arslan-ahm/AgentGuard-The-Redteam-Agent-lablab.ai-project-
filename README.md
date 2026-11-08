@@ -160,16 +160,16 @@ Full details and how each control is tested: [docs/containment-policy.md](docs/c
 
 | Task | Status |
 |---|:-:|
-| 📐 Plan schema + validator (whitelisted check ids, task caps per profile) | ✅ merged (#22) |
-| 🛟 Deterministic fallback plan per profile | ✅ merged (#22) |
-| ☁️ Vultr Serverless Inference client (timeout, retries, repair prompt) | ✅ merged (#22); tested with a scripted model, not yet against the live Vultr endpoint |
-| 🛡️ Prompt-injection defense (page text as untrusted data, redacted + truncated) | ✅ merged (#22) |
-| 📝 `summarize(findings)` executive summary | ✅ merged (#22) |
-| 🔍 Verifier: re-check, dedupe, confidence, "needs manual review" bucket | ✅ merged (#22); orchestrator stores its results (CR-3) |
-| 🧮 Scoring + release recommendation (pure functions + tests) | ✅ merged (#22) |
-| 📈 False-positive eval (results table) | ✅ merged (#22); real checks vs demo store: 0 of 6 injected false alarms scored, 0 real findings lost |
-| 🤖 Media: AI section of README, slides 5 + 9 | ✅ merged (#22) (`docs/submission/sarah-media.md`) |
-| 🗣️ Media: Q&A prep (AI answers, merged with Arslan's) | ✅ merged (#22) |
+| 📐 Plan schema + validator (whitelisted check ids, task caps per profile) | ✅ merged (#22), done by Arslan |
+| 🛟 Deterministic fallback plan per profile | ✅ merged (#22), done by Arslan |
+| ☁️ Vultr Serverless Inference client (timeout, retries, repair prompt) | ✅ merged (#22), done by Arslan; tested with a scripted model, not yet against the live Vultr endpoint |
+| 🛡️ Prompt-injection defense (page text as untrusted data, redacted + truncated) | ✅ merged (#22), done by Arslan |
+| 📝 `summarize(findings)` executive summary | ✅ merged (#22), done by Arslan |
+| 🔍 Verifier: re-check, dedupe, confidence, "needs manual review" bucket | ✅ merged (#22), done by Arslan; orchestrator stores its results (CR-3) |
+| 🧮 Scoring + release recommendation (pure functions + tests) | ✅ merged (#22), done by Arslan |
+| 📈 False-positive eval (results table) | ✅ merged (#22), done by Arslan; real checks vs demo store: 0 of 6 injected false alarms scored, 0 real findings lost |
+| 🤖 Media: AI section of README, slides 5 + 9 | ✅ merged (#22), done by Arslan (`docs/submission/sarah-media.md`) |
+| 🗣️ Media: Q&A prep (AI answers, merged with Arslan's) | ✅ merged (#22), done by Arslan |
 | 🎙️ Media: video segments 0:45–1:20 and 1:55–2:30 | ⛔ scripts written; recording needs the live demo + UI |
 
 </details>
